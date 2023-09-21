@@ -5,10 +5,12 @@ import dataclasses as dc
 from pathlib import Path
 
 insns = {}
+n = 0
 for line in open("ys7_scp.txt"):
 	match line.split("#")[0].split():
 		case []: pass
-		case [k, v]: insns[int(k, 16)] = v
+		case ["-", skip]: n += int(skip)
+		case [v]: insns[n] = v; n += 1
 		case _: raise ValueError(line)
 
 @dc.dataclass
