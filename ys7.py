@@ -37,35 +37,6 @@ class Nilop:
 
 Expr: T.TypeAlias = int | str | float | Binop | Unop | Nilop
 
-def term(t: int | float | str) -> str:
-	match t:
-		case int(t):
-			return str(t)
-		case float(t):
-			try:
-				from numpy import float32
-				return str(float32(t))
-			except ImportError:
-				return str(t)
-		case str(t):
-			import json
-			return json.dumps(t, ensure_ascii=False)
-
-def format_expr(e: Expr, prio: int = 1000) -> str:
-	prio2 = 100
-	match e:
-		case int(e): s = term(e)
-		case float(e): s = term(e)
-		case str(e): s = e
-		case Binop(a, op, b):
-			prio2 = binops[op]
-			if op != ".": op = f" {op} "
-			s = format_expr(a, prio2) + op + format_expr(b, prio2+1)
-		case Unop(pre, a, suf): s = pre + format_expr(a, 0 if suf else 100) + suf
-		case Nilop(op): s = op
-		case _: raise ValueError(e)
-	return f"({s})" if prio2 < prio else s
-
 @dc.dataclass
 class AExpr:
 	expr: Expr
@@ -218,24 +189,6 @@ tails = {
 	"ExecuteCmd": "return",
 }
 
-def print_code(code: list[Insn]) -> str:
-	from textwrap import indent
-	s = ""
-	for insn in code:
-		args = []
-		for a in insn.args:
-			match a:
-				case int(a): args.append(term(a))
-				case float(a): args.append(term(a))
-				case str(a): args.append(term(a))
-				case list(a): args.append(repr(a))
-				case AExpr(a): args.append(format_expr(a))
-		s += f"{insn.name}({', '.join(args)})"
-		if insn.body is not None:
-			s += " " + print_code(insn.body)
-		s += "\n"
-	return "{\n%s}" % indent(s, "\t")
-
 def restore_return(code: list[Insn]):
 	if code[-1].body is not None:
 		if code[-1].name != "while":
@@ -251,6 +204,53 @@ def strip_tail(code: list[Insn], tail: str | None):
 	for insn in code:
 		if insn.body is not None:
 			strip_tail(insn.body, tails.get(insn.name))
+
+def print_term(t: int | float | str) -> str:
+	match t:
+		case int(t):
+			return str(t)
+		case float(t):
+			try:
+				from numpy import float32
+				return str(float32(t))
+			except ImportError:
+				return str(t)
+		case str(t):
+			import json
+			return json.dumps(t, ensure_ascii=False)
+
+def print_expr(e: Expr, prio: int = 1000) -> str:
+	prio2 = 100
+	match e:
+		case int(e): s = print_term(e)
+		case float(e): s = print_term(e)
+		case str(e): s = e
+		case Binop(a, op, b):
+			prio2 = binops[op]
+			if op != ".": op = f" {op} "
+			s = print_expr(a, prio2) + op + print_expr(b, prio2+1)
+		case Unop(pre, a, suf): s = pre + print_expr(a, 0 if suf else 100) + suf
+		case Nilop(op): s = op
+		case _: raise ValueError(e)
+	return f"({s})" if prio2 < prio else s
+
+def print_code(code: list[Insn]) -> str:
+	from textwrap import indent
+	s = ""
+	for insn in code:
+		args = []
+		for a in insn.args:
+			match a:
+				case int(v): args.append(print_term(v))
+				case float(v): args.append(print_term(v))
+				case str(v): args.append(print_term(v))
+				case list(v): args.append(repr(v))
+				case AExpr(v): args.append(print_expr(v))
+		s += f"{insn.name}({', '.join(args)})"
+		if insn.body is not None:
+			s += " " + print_code(insn.body)
+		s += "\n"
+	return "{\n%s}" % indent(s, "\t")
 
 def parse_ys7_scp(f: read.Reader):
 	f.check(b"YS7_SCP")
