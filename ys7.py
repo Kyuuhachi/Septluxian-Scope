@@ -216,8 +216,7 @@ def print_term(t: int | float | str) -> str:
 			except ImportError:
 				return str(t)
 		case str(t):
-			assert "\"" not in t
-			return "\"" + t + "\""
+			return '"' + t.replace('"', '""') + '"'
 
 def print_expr(e: Expr, prio: int = 1000) -> str:
 	prio2 = 100
