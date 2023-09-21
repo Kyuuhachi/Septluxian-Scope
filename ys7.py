@@ -16,7 +16,6 @@ for line in open("ys7_scp.txt"):
 @dc.dataclass
 class Insn:
 	name: str
-	pos: int
 	args: list[int | float | str | AExpr | list[str]] = dc.field(default_factory=list)
 	body: list[Insn] | None = None
 
@@ -140,16 +139,12 @@ def parse_function(f: read.Reader) -> list[Insn]:
 		match f.u16():
 			case 0x82DD:
 				out[-1].args.append(f.i32())
-				out[-1].pos = f.pos
 			case 0x82DE:
 				out[-1].args.append(f.f32())
-				out[-1].pos = f.pos
 			case 0x82DF:
 				out[-1].args.append(f[f.u32()].decode("cp932"))
-				out[-1].pos = f.pos
 			case 0x82E0:
 				out[-1].args.append(AExpr(parse_expr(f.sub(f.u32()))))
-				out[-1].pos = f.pos
 			case 0x2020:
 				nlines, nbytes = f.u32(), f.u32()
 				starts = [f.u32() for _ in range(nlines)]
@@ -160,11 +155,10 @@ def parse_function(f: read.Reader) -> list[Insn]:
 					assert s.endswith("\x01")
 					val.append(s[:-1])
 				out[-1].args.append(val)
-				out[-1].pos = f.pos
 
 			case op:
 				name = insns.get(op, f"op_{op:04X}")
-				out.append(Insn(name, f.pos))
+				out.append(Insn(name))
 		if out[-1].name in blocks and len(out[-1].args) == 2:
 			out[-1].body = parse_function(f.sub(out[-1].args.pop()))
 	return out
