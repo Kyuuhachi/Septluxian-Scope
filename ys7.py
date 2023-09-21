@@ -146,11 +146,14 @@ def parse_stmt(f: read.Reader) -> Insn:
 	pos = f.pos
 	stmt = parse_insn(f)
 
+	if stmt.name in { "break", "goto" }:
+		stmt.args[-1] += f.pos
+
 	if stmt.name in { "if", "elif", "else", "case", "default", "ExecuteCmd" }:
 		stmt.body = parse_block(f, stmt.args.pop())
 
 	if stmt.name == "if" and stmt.body[-1].name == "goto":
-		assert stmt.body[-1] == Insn("goto", [pos - f.pos])
+		assert stmt.body[-1] == Insn("goto", [pos])
 		stmt.name = "while"
 		stmt.body.pop()
 
@@ -166,7 +169,7 @@ def parse_stmt(f: read.Reader) -> Insn:
 			assert insn.name in {"case", "default"}, insn
 			# TODO fix break
 			if insn.body and insn.body[-1].name == "break":
-				end.add(f.pos + insn.body[-1].args.pop())
+				end.add(insn.body[-1].args.pop())
 		end.add(f.pos)
 		assert len(end) == 1, end
 
