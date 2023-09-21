@@ -142,12 +142,24 @@ def parse_insn(f: read.Reader) -> Insn:
 				break
 	return Insn(name, args)
 
+def fix_break(code: list[Insn], end: int):
+	for i in code:
+		if i.name == "break":
+			if i.args == [end]:
+				i.args = []
+			else:
+				# I don't know what these mean. Breaking from a non-loop?
+				i.args[0] -= i.pos
+		if i.body is not None and i.name not in { "switch", "while" }:
+			fix_break(i.body, end)
+
 def parse_stmt(f: read.Reader) -> Insn:
 	pos = f.pos
 	stmt = parse_insn(f)
+	stmt.pos = f.pos
 
 	if stmt.name in { "break", "goto" }:
-		stmt.args[-1] += f.pos
+		stmt.args[-1] += stmt.pos
 
 	if stmt.name in { "if", "elif", "else", "case", "default", "ExecuteCmd" }:
 		stmt.body = parse_block(f, stmt.args.pop())
@@ -156,6 +168,7 @@ def parse_stmt(f: read.Reader) -> Insn:
 		assert stmt.body[-1] == Insn("goto", [pos])
 		stmt.name = "while"
 		stmt.body.pop()
+		fix_break(stmt.body, f.pos)
 
 	if stmt.name == "switch":
 		stmt.body = []
@@ -167,11 +180,7 @@ def parse_stmt(f: read.Reader) -> Insn:
 			if insn.name in {"return", "endif"}:
 				break
 			assert insn.name in {"case", "default"}, insn
-			# TODO fix break
-			if insn.body and insn.body[-1].name == "break":
-				end.add(insn.body[-1].args.pop())
-		end.add(f.pos)
-		assert len(end) == 1, end
+		fix_break(stmt.body, f.pos)
 
 	return stmt
 
