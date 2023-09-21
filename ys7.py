@@ -37,11 +37,25 @@ class Nilop:
 
 Expr: T.TypeAlias = int | str | float | Binop | Unop | Nilop
 
+def term(t: int | float | str) -> str:
+	match t:
+		case int(t):
+			return str(t)
+		case float(t):
+			try:
+				from numpy import float32
+				return str(float32(t))
+			except ImportError:
+				return str(t)
+		case str(t):
+			import json
+			return json.dumps(t)
+
 def format_expr(e: Expr, prio: int = 1000) -> str:
 	prio2 = 100
 	match e:
-		case int(e): s = repr(e)
-		case float(e): s = repr(e)
+		case int(e): s = term(e)
+		case float(e): s = term(e)
 		case str(e): s = e
 		case Binop(a, op, b):
 			prio2 = binops[op]
@@ -210,9 +224,9 @@ def print_code(code: list[Insn], indent: str = ""):
 		args = []
 		for a in insn.args:
 			match a:
-				case int(a): args.append(repr(a))
-				case float(a): args.append(repr(a))
-				case str(a): args.append(repr(a))
+				case int(a): args.append(term(a))
+				case float(a): args.append(term(a))
+				case str(a): args.append(term(a))
 				case list(a): args.append(repr(a))
 				case AExpr(a): args.append(format_expr(a))
 		print(indent + f"\t{insn.name}({', '.join(args)})", end = "")
