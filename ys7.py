@@ -161,6 +161,7 @@ blocks = {
 	"if": 2,
 	"elif": 2,
 	"else": 1,
+	"case": 2,
 	"ExecuteCmd": 2,
 }
 
@@ -180,9 +181,8 @@ def parse_stmt(f: read.Reader) -> Insn:
 		while True:
 			pos = f.pos
 			insn = parse_stmt(f)
-			print(insn)
 			body.append(insn)
-			if insn in [Insn("endif"), Insn("return")]:
+			if insn.name != "case":
 				break
 		stmt.body = body
 
@@ -230,8 +230,9 @@ def restore_return(code: list[Insn]):
 		code.append(Insn("return"))
 
 def strip_tail(code: list[Insn], tail: str | None):
-	assert code[-1] == Insn(tail)
-	code.pop()
+	if tail is not None:
+		assert code[-1] == Insn(tail)
+		code.pop()
 	for insn in code:
 		if insn.body is not None:
 			strip_tail(insn.body, tails.get(insn.name))
