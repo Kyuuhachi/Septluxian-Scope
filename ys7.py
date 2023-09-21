@@ -214,6 +214,9 @@ def print_term(t: int | float | str) -> str:
 			except ImportError:
 				return str(t)
 		case str(t):
+			assert '\n' not in t
+			assert '\r' not in t
+			assert '\t' not in t
 			return '"' + t.replace('"', '""') + '"'
 
 def print_expr(e: Expr, prio: int = 1000) -> str:
@@ -238,9 +241,15 @@ def print_code(code: list[Insn]) -> str:
 		args = []
 		for a in insn.args:
 			match a:
-				case int(v): args.append(print_term(v))
-				case float(v): args.append(print_term(v))
-				case str(v): args.append(print_term(v))
+				case int(v):
+					args.append(print_term(v))
+				case float(v):
+					args.append(print_term(v))
+				case str(v):
+					if insn.name == "NoiSystemMessage":
+						assert '\\' not in v
+						v = v.replace("\r\n", "\\n")
+					args.append(print_term(v))
 				case list(v):
 					a = ""
 					for line in v:
