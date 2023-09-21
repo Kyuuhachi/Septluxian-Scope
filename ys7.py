@@ -125,10 +125,9 @@ def parse_expr(f: read.Reader) -> Expr:
 		binop("expr_missing_op")
 	return ops[0]
 
-def parse_function(f: read.Reader, length: int) -> list[Insn]:
-	end = f.pos + length
+def parse_function(f: read.Reader) -> list[Insn]:
 	out: list[Insn] = []
-	while f.pos < end:
+	while f.remaining:
 		val = None
 		match f.u16():
 			case op if op in insns:
@@ -177,7 +176,7 @@ def parse_ys7_scp(f: read.Reader):
 		length = f.u32()
 		start = f.u32()
 		print(f"{file}:{name}")
-		i = parse_function(f.at(start), length)
+		i = parse_function(f.at(start).sub(length))
 		for insn in i:
 			args = []
 			for a in insn.args:
@@ -189,9 +188,9 @@ def parse_ys7_scp(f: read.Reader):
 					case AExpr(a): args.append(format_expr(a))
 			print(f"\t{insn.pos}\t{insn.name}({', '.join(args)})")
 
-# file = Path("/home/large/kiseki/ys8/script/test.bin")
-# parse_ys7_scp(read.Reader(file.read_bytes()))
-# # for file in sorted(Path("/home/large/kiseki/ys8/script/").glob("*.bin")):
-# # 	parse_ys7_scp(read.Reader(file.read_bytes()))
-for file in sorted(Path("/home/large/kiseki/nayuta/US/script/").glob("*.bin")):
-	parse_ys7_scp(read.Reader(file.read_bytes()))
+file = Path("/home/large/kiseki/ys8/script/test.bin")
+parse_ys7_scp(read.Reader(file.read_bytes()))
+# for file in sorted(Path("/home/large/kiseki/ys8/script/").glob("*.bin")):
+# 	parse_ys7_scp(read.Reader(file.read_bytes()))
+# for file in sorted(Path("/home/large/kiseki/nayuta/US/script/").glob("*.bin")):
+# 	parse_ys7_scp(read.Reader(file.read_bytes()))
