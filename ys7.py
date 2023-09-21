@@ -17,17 +17,11 @@ class Insn:
 	pos: int
 	args: list[int | float | str | AExpr | list[str]] = dc.field(default_factory=list)
 
-	def __str__(self) -> str:
-		return f"{self.name}({', '.join(map(repr, self.args))})"
-
 @dc.dataclass
 class Binop:
 	a: Expr
 	op: str
 	b: Expr
-
-	def __repr__(self) -> str:
-		return f"({self.a}{self.op}{self.b})"
 
 @dc.dataclass
 class Unop:
@@ -35,15 +29,9 @@ class Unop:
 	a: str
 	suf: str
 
-	def __repr__(self) -> str:
-		return f"{self.pre}{self.a}{self.suf}"
-
 @dc.dataclass
 class Nilop:
 	op: str
-
-	def __repr__(self) -> str:
-		return self.op
 
 Expr: T.TypeAlias = int | str | float | Binop | Unop | Nilop
 
