@@ -171,12 +171,20 @@ def parse_stmt(f: read.Reader) -> Insn:
 
 	if stmt.name == "switch":
 		body = []
+		end = set()
 		while True:
 			pos = f.pos
 			insn = parse_stmt(f)
 			body.append(insn)
 			if insn.name != "case":
 				break
+			if insn.body[-1].name == "break":
+				end.add(f.pos + insn.body[-1].args.pop())
+			else:
+				raise ValueError(insn)
+		end.add(f.pos)
+		assert len(end) == 1, end
+
 		stmt.body = body
 
 	return stmt
@@ -216,7 +224,6 @@ def print_code(code: list[Insn], indent: str = ""):
 def restore_return(code: list[Insn]):
 	if code[-1].body is not None:
 		if code[-1].name != "while":
-			print(code[-1])
 			assert code[-1].body[-1] == Insn("return")
 			code[-1].body.pop()
 		code[-1].body.append(Insn("endif"))
