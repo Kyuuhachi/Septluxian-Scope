@@ -119,7 +119,7 @@ def parse_expr(f: read.Reader) -> Expr:
 			case 0x11: binop("&")
 			case 0x12: binop("||")
 			case 0x13: binop("|")
-			case 0x1A: ops.append(f.u32())
+			case 0x1A: ops.append(f.i32())
 			case 0x1B: ops.append(f.f32())
 			case 0x1D: break
 			case 0x1F: unop("FLAG[", "]")
