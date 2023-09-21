@@ -10,11 +10,23 @@ WaitMenu
 SetChrPos
 - 1
 MoveTo
-- 5
+MoveToChr
+- 1
+MoveToEx
+MoveToEx2
+- 1
 Turn
-- 7
+Turn2
+TurnTo
+- 1
+TurnToChr
+Jump
+Dash
+ForceDash
 MoveZ
-- 3
+MoveRotate
+ResetChrPos
+ClearDebris
 MoveCameraAt
 RotateCamera
 ChangeCameraZoom
@@ -42,14 +54,16 @@ MenuAdd
 MenuOpen
 MenuClose
 YesNoMenu
-- 3
+- 1
+PlayBGM
+StopBGM
 PlaySE
 - 1
 SetName
 TalkMes
 Message2
 WaitPrompt
-- 1
+ClosePrompt
 Portrait_Load
 Portrait_Unload
 Portrait_Create
@@ -59,25 +73,49 @@ Portrait_Anime
 ExecuteCmd
 ExecuteFunc
 WaitThread
-- 3
-EventCue
 - 1
+StopThread
+- 1
+EventCue
+HP_Heal
 HP_Recover
 - 1
 SP_Recover
 - 3
 SetCameraZPlane
 ResetCameraZPlane
-- 12
+- 1
+Effect
+Effect2
+ChrEffect
+ChrEffect2
+ChrSpecular
+Hagitori
+Hagitori2
+- 1
+HeadYes
+HeadNo
+Look
 LookChr
-- 4
+LookTo
+- 1
+LookReset
+- 1
 MapHide
 MapAnime
-- 8
+- 1
+MapAnimeLast
+ShopOpen
+- 2
+EventBox
+- 1
+EventAreaEnable
 ChangeItemSlot
 DeleteItem
 GetItem
-- 4
+- 2
+ResetMotion
+- 1
 if
 elif
 else
@@ -87,7 +125,8 @@ goto
 break
 endif
 case
-- 2
+- 1
+FreeMove
 ResetFollowPoint
 ResetPartyPos
 - 1
@@ -97,7 +136,9 @@ EquipWeapon
 EquipArmor
 EquipShield
 EquipAccessory
-- 3
+- 1
+EntryOn
+SetEventParam
 SetCheckPoint
 - 1
 WarpMenu
@@ -105,7 +146,8 @@ WarpMenu
 DestroyObj
 GetSkill
 SetSkillShortCut
-- 3
+- 2
+BtlPopup
 AddEX
 SetPartyMember
 SavePartyMember
@@ -115,28 +157,62 @@ LoadEventPartyChr
 ReleaseEventPartyChr
 - 2
 ResetCameraObserver
-- 5
+DoorOpen
+DoorClose
+ChrAlpha
+ChrColor
+MapColor
 MapDelProp
 MapSetProp
-- 15
-CopyStatus
+Blur
+GameOver
+LoadEffect
+ReleaseEffect
+TimeAtkStart
+- 3
+TimeAtkMenuOpen
+- 1
+ReturnTitle
+StopEffect
+StopEmotion
 - 2
+CopyStatus
+Movie
+WaitMovie
 EmotionEx
 - 1
 StopSE
-- 1
+SetEnvSEPlayState
 SetFog
 GetItemMessageExPlus
-- 2
+- 1
+Cure
 CampMenu
-- 8
+ResetMoveVec
+- 1
+RemovePartyEquip
+AddStatus
+SetPlaceName
+YesNoMenuEx
+SetPartyPosEntryOut
+- 1
 SetMapMarker
 DelMapMarker
-- 6
+- 1
+SetEventNPC
+- 1
+SetPortal
+- 2
 Portrait_SetKoma
-- 8
+- 7
+Portrait_Change
 HP_ORecover
-- 10
+- 2
+ChangeHDRDoF
+ResetHDRParam
+- 3
+WaitAnimation
+- 2
 SetDiaryFlag
 - 2
 Set3DParticle
@@ -145,11 +221,12 @@ Change3DParticleParam
 Stop3DParticle
 SetOverlay
 StopOverlay
-- 1
+SetParent
 ChrNodeHide
 - 1
 RollCamera
-- 2
+CheckChrAngle
+CheckChrDistance
 SetMapViewPos
 ResetTracks
 - 1
@@ -162,22 +239,33 @@ CreateLight
 SetLightRadius
 SetLightColor
 CureAll
-- 5
+SetCondition
+PlaySELabel
+- 1
+StopSELabel
+FadeSELabel
 FadeBGM
 - 1
 Timer
-- 2
+VisualName
+- 1
 PlayVoice
-- 4
+- 1
+StopVoice
+SetShadowBound
+ResetShadowBound
 GetTrophy
-- 3
+- 2
+EndTimeAtk
 ChangeSubAnimation
 SubAnimationMode
 OpenMinimap
-- 3
+SetCantUseItem
+- 1
+UseItem
 TalkPopup
 MenuType
-- 1
+SetFogBack
 SetDoF
 SetDoFFocus
 SetGlare
@@ -202,10 +290,10 @@ SetWorldMapping
 SetMotSpd
 KeyAnimeCreate
 KeyAnimeSet
-- 1
+KeyAnimeCamera
 KeyAnimeChara
 KeyAnimeRelease
-- 1
+WaitAnimation2
 ActiveVoiceStart
 ActiveVoiceStop
 InterceptStart
@@ -216,27 +304,68 @@ InterceptStop
 EquipCostume
 - 1
 CallFunc
-- 5
+FixPlayerChr
+SetShadowOffset
+SetShadowOffsetChr
+SetYs8Camera
+ResetYs8Camera
 DelCheckPoint
-- 2
+SetSkipScript
+Slow
 SoundEfx
-- 1
+SetFishingAreaState
 SaveEventState
 RestoreEventState
 - 1
 InterceptResume
-- 2
+InterceptKickOffMenu
+GetCoopEvPeopleNum
 PitchChr
 RollChr
-- 2
+AddWarpDisableList
+GetProgressQuest
 SetDiaryCharaFlag
 ItemBackup
-- 5
-Portrait_SS
-- 2
-SetDiaryShopFlag
-- 14
-MenuEnable
+UseItem
 - 1
+SetRealTimeHelp
+SetEventDriven
+PlaySceneVoice
+Portrait_SS
+CameraShakeParam
+GetExp
+SetDiaryShopFlag
+ChangeChrPos
+ItemCue
+InterceptSetRetMap
+WarpCancel
+DropItem
+DelWarpDisableList
+SetChrInfoFlagStr
+LoadChr
+ReleaseChr
+ReleaseChrGo
+SetGradationColor
+SetLensFlare
+GetDiaryCharaFlag
+SetChrAtariFlag
+MenuEnable
+SetChrID
 GetTrophyDirect
 DelMapMarkerAll
+DelSkillNewMark
+GalleryEvStart
+GalleryEvEnd
+GalleryMenuOpen
+VisualNameEnd
+PointLightEnable
+SetEnvEfxPlayState
+SetShadowCamera
+SetShadowSoft
+SetSSAOParam
+- 1
+VibrationPad
+- 2
+SystemSave
+SetChrWorkGroup
+SetChrName
