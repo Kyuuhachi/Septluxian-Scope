@@ -218,8 +218,9 @@ tails = {
 	"ExecuteCmd": "return",
 }
 
-def print_code(code: list[Insn], indent: str = ""):
-	print(" {")
+def print_code(code: list[Insn]) -> str:
+	from textwrap import indent
+	s = ""
 	for insn in code:
 		args = []
 		for a in insn.args:
@@ -229,11 +230,11 @@ def print_code(code: list[Insn], indent: str = ""):
 				case str(a): args.append(term(a))
 				case list(a): args.append(repr(a))
 				case AExpr(a): args.append(format_expr(a))
-		print(indent + f"\t{insn.name}({', '.join(args)})", end = "")
+		s += f"{insn.name}({', '.join(args)})"
 		if insn.body is not None:
-			print_code(insn.body, indent + "\t")
-		print()
-	print(indent + "}", end = "")
+			s += " " + print_code(insn.body)
+		s += "\n"
+	return "{\n%s}" % indent(s, "\t")
 
 def restore_return(code: list[Insn]):
 	if code[-1].body is not None:
@@ -260,12 +261,10 @@ def parse_ys7_scp(f: read.Reader):
 		name = f[32].rstrip(b"\0").decode("cp932")
 		length = f.u32()
 		start = f.u32()
-		print(f"{file}:{name}", end="")
 		code = parse_block(f.at(start).sub(length))
 		restore_return(code)
 		strip_tail(code, "return")
-		print_code(code)
-		print()
+		print(f"{file}:{name} {print_code(code)}")
 		print()
 
 file = Path("/home/large/kiseki/ys8/script/test.bin")
