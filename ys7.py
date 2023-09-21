@@ -216,8 +216,8 @@ def print_term(t: int | float | str) -> str:
 			except ImportError:
 				return str(t)
 		case str(t):
-			import json
-			return json.dumps(t, ensure_ascii=False)
+			assert "\"" not in t
+			return "\"" + t + "\""
 
 def print_expr(e: Expr, prio: int = 1000) -> str:
 	prio2 = 100
