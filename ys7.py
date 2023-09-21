@@ -49,7 +49,7 @@ def term(t: int | float | str) -> str:
 				return str(t)
 		case str(t):
 			import json
-			return json.dumps(t)
+			return json.dumps(t, ensure_ascii=False)
 
 def format_expr(e: Expr, prio: int = 1000) -> str:
 	prio2 = 100
