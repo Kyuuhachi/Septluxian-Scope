@@ -82,11 +82,11 @@ def _check(f: Reader, func: T.Callable[[], A], v: A):
 		f.pos = pos
 		raise ValueError(f"at {pos:X}: got {w}, expected {v}")
 
-def dump(data: bytes, width: int = 48):
+def dump(data: bytes, width: int = 48) -> str:
 	import re
 	escape = re.compile("[\x00-\x1F\x7F\x80-\x9F�]+")
+	s = ""
 	for a in range(0, len(data), width):
-		s = ""
 		pfmt = ""
 		for b in range(a, a+width):
 			if b >= len(data): s += "   "; continue
@@ -105,6 +105,5 @@ def dump(data: bytes, width: int = 48):
 		s += "\x1B[m"
 		text = data[a:a+width].decode("cp932", errors="replace")
 		text = escape.sub(lambda a: "\x1B[2m" + "·"*len(a.group()) + "\x1B[m", text)
-		s += "▏" + text
-
-		print(s)
+		s += "▏" + text + "\n"
+	return s
