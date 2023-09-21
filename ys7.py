@@ -125,28 +125,31 @@ def parse_expr(f: read.Reader) -> Expr:
 		binop("expr_missing_op")
 	return ops[0]
 
+blocks = {
+	"if": "endif",
+	"elseif": "endif",
+	"else": "endif",
+	"ExecuteCmd": "return",
+}
+
 def parse_function(f: read.Reader) -> list[Insn]:
 	out: list[Insn] = []
 	while f.remaining:
 		val = None
 		match f.u16():
-			case op if op in insns:
-				name = insns[op]
-
 			case 0x82DD:
-				name = "int"
-				val = f.i32()
+				out[-1].args.append(f.i32())
+				out[-1].pos = f.pos
 			case 0x82DE:
-				name = "float"
-				val = f.f32()
+				out[-1].args.append(f.f32())
+				out[-1].pos = f.pos
 			case 0x82DF:
-				name = "string"
-				val = f[f.u32()].decode("cp932")
+				out[-1].args.append(f[f.u32()].decode("cp932"))
+				out[-1].pos = f.pos
 			case 0x82E0:
-				name = "expr"
-				val = AExpr(parse_expr(f.sub(f.u32())))
+				out[-1].args.append(AExpr(parse_expr(f.sub(f.u32()))))
+				out[-1].pos = f.pos
 			case 0x2020:
-				name = "text";
 				nlines, nbytes = f.u32(), f.u32()
 				starts = [f.u32() for _ in range(nlines)]
 				text = f[nbytes]
@@ -155,15 +158,12 @@ def parse_function(f: read.Reader) -> list[Insn]:
 					s = text[a:b].decode("cp932")
 					assert s.endswith("\x01")
 					val.append(s[:-1])
+				out[-1].args.append(val)
+				out[-1].pos = f.pos
 
 			case op:
-				name = f"op_{op:04X}"
-
-		if val is None:
-			out.append(Insn(name, f.pos))
-		else:
-			out[-1].args.append(val)
-			out[-1].pos = f.pos
+				name = insns.get(op, f"op_{op:04X}")
+				out.append(Insn(name, f.pos))
 	return out
 
 def parse_ys7_scp(f: read.Reader):
