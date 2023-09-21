@@ -125,7 +125,7 @@ goto
 break
 endif
 case
-- 1
+default
 FreeMove
 ResetFollowPoint
 ResetPartyPos
