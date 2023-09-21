@@ -18,6 +18,7 @@ class Insn:
 	name: str
 	pos: int
 	args: list[int | float | str | AExpr | list[str]] = dc.field(default_factory=list)
+	body: list[Insn] | None = None
 
 @dc.dataclass
 class Binop:
@@ -164,7 +165,26 @@ def parse_function(f: read.Reader) -> list[Insn]:
 			case op:
 				name = insns.get(op, f"op_{op:04X}")
 				out.append(Insn(name, f.pos))
+		if out[-1].name in blocks and len(out[-1].args) == 2:
+			out[-1].body = parse_function(f.sub(out[-1].args.pop()))
 	return out
+
+def print_code(code: list[Insn], indent: str = ""):
+	print(" {")
+	for insn in code:
+		args = []
+		for a in insn.args:
+			match a:
+				case int(a): args.append(repr(a))
+				case float(a): args.append(repr(a))
+				case str(a): args.append(repr(a))
+				case list(a): args.append(repr(a))
+				case AExpr(a): args.append(format_expr(a))
+		print(indent + f"\t{insn.name}({', '.join(args)})", end = "")
+		if insn.body is not None:
+			print_code(insn.body, indent + "\t")
+		print()
+	print(indent + "}", end = "")
 
 def parse_ys7_scp(f: read.Reader):
 	f.check(b"YS7_SCP")
@@ -175,18 +195,9 @@ def parse_ys7_scp(f: read.Reader):
 		name = f[32].rstrip(b"\0").decode("cp932")
 		length = f.u32()
 		start = f.u32()
-		print(f"{file}:{name}")
-		i = parse_function(f.at(start).sub(length))
-		for insn in i:
-			args = []
-			for a in insn.args:
-				match a:
-					case int(a): args.append(repr(a))
-					case float(a): args.append(repr(a))
-					case str(a): args.append(repr(a))
-					case list(a): args.append(repr(a))
-					case AExpr(a): args.append(format_expr(a))
-			print(f"\t{insn.pos}\t{insn.name}({', '.join(args)})")
+		print(f"{file}:{name}", end="")
+		print_code(parse_function(f.at(start).sub(length)))
+		print()
 
 file = Path("/home/large/kiseki/ys8/script/test.bin")
 parse_ys7_scp(read.Reader(file.read_bytes()))
