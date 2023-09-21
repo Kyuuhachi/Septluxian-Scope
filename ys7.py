@@ -28,7 +28,7 @@ class Binop:
 @dc.dataclass
 class Unop:
 	pre: str
-	a: str
+	a: Expr
 	suf: str
 
 @dc.dataclass
@@ -78,12 +78,14 @@ binops = {
 
 def parse_expr(f: read.Reader) -> Expr:
 	ops = []
+	def pop() -> Expr:
+		return ops.pop() if ops else Nilop("expr_missing")
 	def unop(pre: str, suf: str):
-		a = ops.pop() if ops else "expr_missing"
+		a = pop()
 		ops.append(Unop(pre, a, suf))
 	def binop(op: str):
-		b = ops.pop() if ops else "expr_missing"
-		a = ops.pop() if ops else "expr_missing"
+		b = pop()
+		a = pop()
 		ops.append(Binop(a, op, b))
 	while True:
 		match f.u16():
@@ -123,7 +125,7 @@ def parse_expr(f: read.Reader) -> Expr:
 	assert not f.remaining
 	while len(ops) > 1:
 		binop("expr_missing_op")
-	return ops[0]
+	return pop()
 
 blocks = {
 	"if": ("endif", 2),
