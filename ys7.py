@@ -131,6 +131,7 @@ blocks = {
 	"if": ("endif", 2),
 	"elif": ("endif", 2),
 	"else": ("endif", 1),
+	"while": ("endif", None),
 	"ExecuteCmd": ("return", 2),
 }
 
@@ -189,6 +190,21 @@ def print_code(code: list[Insn], indent: str = ""):
 		print()
 	print(indent + "}", end = "")
 
+def restore_return(code: list[Insn]):
+	if code[-1].body is not None:
+		if code[-1].name != "while":
+			assert code[-1].body[-1] == Insn("return")
+			code[-1].body.pop()
+		code[-1].body.append(Insn("endif"))
+		code.append(Insn("return"))
+
+def strip_tail(code: list[Insn], tail: str):
+	assert code[-1] == Insn(tail)
+	code.pop()
+	for insn in code:
+		if insn.name in blocks:
+			strip_tail(insn.body, blocks[insn.name][0])
+
 def parse_ys7_scp(f: read.Reader):
 	f.check(b"YS7_SCP")
 	f.check_u32(0)
@@ -199,7 +215,10 @@ def parse_ys7_scp(f: read.Reader):
 		length = f.u32()
 		start = f.u32()
 		print(f"{file}:{name}", end="")
-		print_code(parse_function(f.at(start).sub(length)))
+		code = parse_function(f.at(start).sub(length))
+		restore_return(code)
+		strip_tail(code, "return")
+		print_code(code)
 		print()
 		print()
 
