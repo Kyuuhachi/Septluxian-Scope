@@ -237,7 +237,7 @@ def print_expr(e: Expr, prio: int = 1000) -> str:
 def print_code(code: list[Insn]) -> str:
 	from textwrap import indent
 	s = ""
-	for insn in code:
+	for i, insn in enumerate(code):
 		args = []
 		for a in insn.args:
 			match a:
@@ -249,7 +249,10 @@ def print_code(code: list[Insn]) -> str:
 		s += f"{insn.name}({', '.join(args)})"
 		if insn.body is not None:
 			s += " " + print_code(insn.body)
-		s += "\n"
+		if insn.name in ["if", "elif"] and i+1 < len(code) and code[i+1].name in ["elif", "else"]:
+			s += " "
+		else:
+			s += "\n"
 	return "{\n%s}" % indent(s, "\t")
 
 def parse_ys7_scp(f: read.Reader):
