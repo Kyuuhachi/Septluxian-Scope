@@ -147,7 +147,7 @@ def parse_stmt(f: read.Reader) -> Insn:
 	stmt = parse_insn(f)
 
 	if stmt.name in { "if", "elif", "else", "case", "default", "ExecuteCmd" }:
-		stmt.body = parse_block(f.sub(stmt.args.pop()))
+		stmt.body = parse_block(f, stmt.args.pop())
 
 	if stmt.name == "if" and stmt.body[-1].name == "goto":
 		assert stmt.body[-1] == Insn("goto", [pos - f.pos])
@@ -172,10 +172,12 @@ def parse_stmt(f: read.Reader) -> Insn:
 
 	return stmt
 
-def parse_block(f: read.Reader) -> list[Insn]:
+def parse_block(f: read.Reader, length: int) -> list[Insn]:
 	out = []
-	while f.remaining:
+	end = f.pos + length
+	while f.pos < end:
 		out.append(parse_stmt(f))
+	assert f.pos == end
 	return out
 
 tails = {
@@ -274,7 +276,7 @@ def parse_ys7_scp(f: read.Reader):
 		name = f[32].rstrip(b"\0").decode("cp932")
 		length = f.u32()
 		start = f.u32()
-		code = parse_block(f.at(start).sub(length))
+		code = parse_block(f.at(start), length)
 		restore_return(code)
 		strip_tail(code, "return")
 		print(f"{file}:{name} {print_code(code)}")
