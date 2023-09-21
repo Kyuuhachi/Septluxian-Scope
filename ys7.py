@@ -126,10 +126,10 @@ def parse_expr(f: read.Reader) -> Expr:
 	return ops[0]
 
 blocks = {
-	"if": "endif",
-	"elseif": "endif",
-	"else": "endif",
-	"ExecuteCmd": "return",
+	"if": ("endif", 2),
+	"elif": ("endif", 2),
+	"else": ("endif", 1),
+	"ExecuteCmd": ("return", 2),
 }
 
 def parse_function(f: read.Reader) -> list[Insn]:
@@ -157,10 +157,17 @@ def parse_function(f: read.Reader) -> list[Insn]:
 				out[-1].args.append(val)
 
 			case op:
+				insn_pos = f.pos - 2
 				name = insns.get(op, f"op_{op:04X}")
 				out.append(Insn(name))
-		if out[-1].name in blocks and len(out[-1].args) == 2:
-			out[-1].body = parse_function(f.sub(out[-1].args.pop()))
+
+		last = out[-1]
+		if last.name in blocks and len(last.args) == blocks[last.name][1]:
+			last.body = parse_function(f.sub(last.args.pop()))
+			if last.name == "if" and last.body[-1].name == "goto":
+				assert last.body[-1] == Insn("goto", [insn_pos - f.pos])
+				last.name = "while"
+				last.body.pop()
 	return out
 
 def print_code(code: list[Insn], indent: str = ""):
