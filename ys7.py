@@ -165,20 +165,23 @@ def parse_insn(f: read.Reader) -> Insn:
 				break
 	return Insn(name, args)
 
-def parse_function(f: read.Reader) -> list[Insn]:
+def parse_stmt(f: read.Reader) -> Insn:
+	pos = f.pos
+	insn = parse_insn(f)
+
+	if insn.name in blocks:
+		insn.body = parse_block(f.sub(insn.args.pop()))
+		if insn.name == "if" and insn.body[-1].name == "goto":
+			assert insn.body[-1] == Insn("goto", [pos - f.pos])
+			insn.name = "while"
+			insn.body.pop()
+
+	return insn
+
+def parse_block(f: read.Reader) -> list[Insn]:
 	out: list[Insn] = []
 	while f.remaining:
-		pos = f.pos
-		insn = parse_insn(f)
-
-		if insn.name in blocks and len(insn.args) == blocks[insn.name][1]:
-			insn.body = parse_function(f.sub(insn.args.pop()))
-			if insn.name == "if" and insn.body[-1].name == "goto":
-				assert insn.body[-1] == Insn("goto", [pos - f.pos])
-				insn.name = "while"
-				insn.body.pop()
-
-		out.append(insn)
+		out.append(parse_stmt(f))
 	return out
 
 def print_code(code: list[Insn], indent: str = ""):
@@ -223,7 +226,7 @@ def parse_ys7_scp(f: read.Reader):
 		length = f.u32()
 		start = f.u32()
 		print(f"{file}:{name}", end="")
-		code = parse_function(f.at(start).sub(length))
+		code = parse_block(f.at(start).sub(length))
 		restore_return(code)
 		strip_tail(code, "return")
 		print_code(code)
