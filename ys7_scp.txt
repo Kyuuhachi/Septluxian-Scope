@@ -81,11 +81,13 @@ GetItem
 if
 elif
 else
-- 2
-goto
+switch
 - 1
+goto
+break
 endif
-- 3
+case
+- 2
 ResetFollowPoint
 ResetPartyPos
 - 1
@@ -113,7 +115,10 @@ LoadEventPartyChr
 ReleaseEventPartyChr
 - 2
 ResetCameraObserver
-- 22
+- 5
+MapDelProp
+MapSetProp
+- 15
 CopyStatus
 - 2
 EmotionEx
