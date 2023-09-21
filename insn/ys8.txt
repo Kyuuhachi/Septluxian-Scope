@@ -1,24 +1,27 @@
 - 32768
 return
 LoadArg
-- 4
+LoadTex
+LoadTexAsync
+LoadTexWait
+ReleaseTex
 ChangeAnimation
 Message
 Wait
 WaitFade
 WaitMenu
 SetChrPos
-- 1
+Move
 MoveTo
 MoveToChr
-- 1
+MoveEx
 MoveToEx
 MoveToEx2
-- 1
+MoveToChrEx
 Turn
 Turn2
 TurnTo
-- 1
+TurnToVec
 TurnToChr
 Jump
 Dash
@@ -44,7 +47,7 @@ SetFlag
 SetChrWork
 SetWork
 JoinParty
-- 1
+JoinGuest
 SeparateParty
 FadeOut
 FadeIn
@@ -54,11 +57,11 @@ MenuAdd
 MenuOpen
 MenuClose
 YesNoMenu
-- 1
+MiniGame
 PlayBGM
 StopBGM
 PlaySE
-- 1
+PlaySE3D
 SetName
 TalkMes
 Message2
@@ -69,22 +72,28 @@ Portrait_Unload
 Portrait_Create
 Portrait_Close
 Portrait_Anime
-- 5
+Portrait3D_Set
+Portrait3D_Release
+Portrait3D_Create
+Portrait3D_Close
+Portrait3D_Anime
 ExecuteCmd
 ExecuteFunc
 WaitThread
-- 1
+WaitThread2
 StopThread
-- 1
+StopThread2
 EventCue
 HP_Heal
 HP_Recover
-- 1
+HPMax_Recover
 SP_Recover
-- 3
+SPMax_Recover
+RepairSkillCount
+SetCameraMode
 SetCameraZPlane
 ResetCameraZPlane
-- 1
+ChangeCamera
 Effect
 Effect2
 ChrEffect
@@ -92,35 +101,37 @@ ChrEffect2
 ChrSpecular
 Hagitori
 Hagitori2
-- 1
+ChangeFace
 HeadYes
 HeadNo
 Look
 LookChr
 LookTo
-- 1
+LookVec
 LookReset
-- 1
+Emotion
 MapHide
 MapAnime
-- 1
+MapAnimeIndex
 MapAnimeLast
 ShopOpen
-- 2
+ShowMinipop
+ChangeItemState
 EventBox
-- 1
+EventBox2
 EventAreaEnable
 ChangeItemSlot
 DeleteItem
 GetItem
-- 2
+GetItemMessage
+AddItemLog
 ResetMotion
-- 1
+PlayMMV
 if
 elif
 else
 switch
-- 1
+while
 goto
 break
 endif
@@ -129,24 +140,25 @@ default
 FreeMove
 ResetFollowPoint
 ResetPartyPos
-- 1
+CurePoison
 EarthQuake
 SetLevel
 EquipWeapon
 EquipArmor
 EquipShield
 EquipAccessory
-- 1
+Entry
 EntryOn
 SetEventParam
 SetCheckPoint
-- 1
+GetCheckPoint
 WarpMenu
-- 1
+TopicMenu
 DestroyObj
 GetSkill
 SetSkillShortCut
-- 2
+SetLeverState
+SetLeverNotChange
 BtlPopup
 AddEX
 SetPartyMember
@@ -155,7 +167,8 @@ RestorePartyMember
 SetEventPartyChr
 LoadEventPartyChr
 ReleaseEventPartyChr
-- 2
+TimeStop
+PartyMenu
 ResetCameraObserver
 DoorOpen
 DoorClose
@@ -169,99 +182,116 @@ GameOver
 LoadEffect
 ReleaseEffect
 TimeAtkStart
-- 3
+TimeAtkEnd
+TimeAtkMenuReset
+TimeAtkMenuAdd
 TimeAtkMenuOpen
-- 1
+AutoSave
 ReturnTitle
 StopEffect
 StopEmotion
-- 2
+PartyChrHide
+GetItemMessageEx
 CopyStatus
 Movie
 WaitMovie
 EmotionEx
-- 1
+SetFumiSwitch
 StopSE
 SetEnvSEPlayState
 SetFog
 GetItemMessageExPlus
-- 1
+ResetPresetCamera
 Cure
 CampMenu
 ResetMoveVec
-- 1
+PlayBGMB
 RemovePartyEquip
 AddStatus
 SetPlaceName
 YesNoMenuEx
 SetPartyPosEntryOut
-- 1
+MPMenu
 SetMapMarker
 DelMapMarker
-- 1
+DeleteArgMarker
 SetEventNPC
-- 1
+PuzzleOpen
 SetPortal
-- 2
+CreateKoma
+CloseKoma
 Portrait_SetKoma
-- 7
+SetKomaInfo
+SetKomaColor
+MoveKoma
+MoveKomaEx
+VibratePortrait
+VibrateKoma
+SetFadeColor
 Portrait_Change
 HP_ORecover
-- 2
+ChangeHDRBaseLum
+ChangeHDRSoftFocus
 ChangeHDRDoF
 ResetHDRParam
-- 3
+MapNodeEvent
+EventAttack
+EventDamage
 WaitAnimation
-- 2
+MoveToEx3
+EvTimeShift
 SetDiaryFlag
-- 2
+QuestBoard
+ReturnMemoryMenu
 Set3DParticle
 Change3DParticleParam
-- 1
+Change3DParticleVec
 Stop3DParticle
 SetOverlay
 StopOverlay
 SetParent
 ChrNodeHide
-- 1
+ForceChangeCamera
 RollCamera
 CheckChrAngle
 CheckChrDistance
 SetMapViewPos
 ResetTracks
-- 1
+DiscoverMemory
 StartZapping
 StopZapping
 ChrLightState
-- 2
+ChrLightRadius
+ChrLightColor
 CreateLight
-- 1
+SetLightState
 SetLightRadius
 SetLightColor
 CureAll
 SetCondition
 PlaySELabel
-- 1
+PlaySE3DLabel
 StopSELabel
 FadeSELabel
 FadeBGM
-- 1
+SetWeaponKillScript
 Timer
 VisualName
-- 1
+SetArgInitPos
 PlayVoice
-- 1
+PlayVoice3D
 StopVoice
 SetShadowBound
 ResetShadowBound
 GetTrophy
-- 2
+MemoryMenu
+RemoveEquipAll
 EndTimeAtk
 ChangeSubAnimation
 SubAnimationMode
 OpenMinimap
 SetCantUseItem
-- 1
+WaitAniProcess
 UseItem
 TalkPopup
 MenuType
@@ -299,10 +329,11 @@ ActiveVoiceStop
 InterceptStart
 Intercept
 JoinNPC
-- 2
+SetFishingRank
+CheckFishingSpotCount
 InterceptStop
 EquipCostume
-- 1
+SetFogWater
 CallFunc
 FixPlayerChr
 SetShadowOffset
@@ -316,7 +347,7 @@ SoundEfx
 SetFishingAreaState
 SaveEventState
 RestoreEventState
-- 1
+GetInterceptRank
 InterceptResume
 InterceptKickOffMenu
 GetCoopEvPeopleNum
@@ -326,8 +357,8 @@ AddWarpDisableList
 GetProgressQuest
 SetDiaryCharaFlag
 ItemBackup
-UseItem
-- 1
+UseFood
+GetNumKilledEnemy
 SetRealTimeHelp
 SetEventDriven
 PlaySceneVoice
@@ -363,9 +394,10 @@ SetEnvEfxPlayState
 SetShadowCamera
 SetShadowSoft
 SetSSAOParam
-- 1
+SetVolumeParam
 VibrationPad
-- 2
+VibrationPadStop
+VibrationPadStopAll
 SystemSave
 SetChrWorkGroup
 SetChrName
