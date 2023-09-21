@@ -127,14 +127,6 @@ def parse_expr(f: read.Reader) -> Expr:
 		binop("expr_missing_op")
 	return pop()
 
-blocks = {
-	"if": ("endif", 2),
-	"elif": ("endif", 2),
-	"else": ("endif", 1),
-	"while": ("endif", None),
-	"ExecuteCmd": ("return", 2),
-}
-
 def parse_insn(f: read.Reader) -> Insn:
 	op = f.u16()
 	name = insns.get(op, f"op_{op:04X}")
@@ -165,24 +157,51 @@ def parse_insn(f: read.Reader) -> Insn:
 				break
 	return Insn(name, args)
 
+blocks = {
+	"if": 2,
+	"elif": 2,
+	"else": 1,
+	"ExecuteCmd": 2,
+}
+
 def parse_stmt(f: read.Reader) -> Insn:
 	pos = f.pos
-	insn = parse_insn(f)
+	stmt = parse_insn(f)
 
-	if insn.name in blocks:
-		insn.body = parse_block(f.sub(insn.args.pop()))
-		if insn.name == "if" and insn.body[-1].name == "goto":
-			assert insn.body[-1] == Insn("goto", [pos - f.pos])
-			insn.name = "while"
-			insn.body.pop()
+	if stmt.name in blocks:
+		stmt.body = parse_block(f.sub(stmt.args.pop()))
+		if stmt.name == "if" and stmt.body[-1].name == "goto":
+			assert stmt.body[-1] == Insn("goto", [pos - f.pos])
+			stmt.name = "while"
+			stmt.body.pop()
 
-	return insn
+	if stmt.name == "switch":
+		body = []
+		while True:
+			pos = f.pos
+			insn = parse_stmt(f)
+			print(insn)
+			body.append(insn)
+			if insn in [Insn("endif"), Insn("return")]:
+				break
+		stmt.body = body
+
+	return stmt
 
 def parse_block(f: read.Reader) -> list[Insn]:
 	out: list[Insn] = []
 	while f.remaining:
 		out.append(parse_stmt(f))
 	return out
+
+tails = {
+	"if": "endif",
+	"elif": "endif",
+	"else": "endif",
+	"while": "endif",
+	"switch": "endif",
+	"ExecuteCmd": "return",
+}
 
 def print_code(code: list[Insn], indent: str = ""):
 	print(" {")
@@ -204,17 +223,18 @@ def print_code(code: list[Insn], indent: str = ""):
 def restore_return(code: list[Insn]):
 	if code[-1].body is not None:
 		if code[-1].name != "while":
+			print(code[-1])
 			assert code[-1].body[-1] == Insn("return")
 			code[-1].body.pop()
 		code[-1].body.append(Insn("endif"))
 		code.append(Insn("return"))
 
-def strip_tail(code: list[Insn], tail: str):
+def strip_tail(code: list[Insn], tail: str | None):
 	assert code[-1] == Insn(tail)
 	code.pop()
 	for insn in code:
-		if insn.name in blocks:
-			strip_tail(insn.body, blocks[insn.name][0])
+		if insn.body is not None:
+			strip_tail(insn.body, tails.get(insn.name))
 
 def parse_ys7_scp(f: read.Reader):
 	f.check(b"YS7_SCP")
