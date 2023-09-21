@@ -6,7 +6,7 @@ from pathlib import Path
 
 insns = {}
 n = 0
-for line in open("ys7_scp.txt"):
+for line in open("insn/ys8.txt"):
 	match line.split("#")[0].split():
 		case []: pass
 		case ["-", skip]: n += int(skip)
