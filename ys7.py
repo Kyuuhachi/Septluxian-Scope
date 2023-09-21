@@ -135,19 +135,20 @@ blocks = {
 	"ExecuteCmd": ("return", 2),
 }
 
-def parse_function(f: read.Reader) -> list[Insn]:
-	out: list[Insn] = []
+def parse_insn(f: read.Reader) -> Insn:
+	op = f.u16()
+	name = insns.get(op, f"op_{op:04X}")
+	args = []
 	while f.remaining:
-		val = None
 		match f.u16():
 			case 0x82DD:
-				out[-1].args.append(f.i32())
+				args.append(f.i32())
 			case 0x82DE:
-				out[-1].args.append(f.f32())
+				args.append(f.f32())
 			case 0x82DF:
-				out[-1].args.append(f[f.u32()].decode("cp932"))
+				args.append(f[f.u32()].decode("cp932"))
 			case 0x82E0:
-				out[-1].args.append(AExpr(parse_expr(f.sub(f.u32()))))
+				args.append(AExpr(parse_expr(f.sub(f.u32()))))
 			case 0x2020:
 				nlines, nbytes = f.u32(), f.u32()
 				starts = [f.u32() for _ in range(nlines)]
@@ -157,20 +158,27 @@ def parse_function(f: read.Reader) -> list[Insn]:
 					s = text[a:b].decode("cp932")
 					assert s.endswith("\x01")
 					val.append(s[:-1])
-				out[-1].args.append(val)
+				args.append(val)
 
 			case op:
-				insn_pos = f.pos - 2
-				name = insns.get(op, f"op_{op:04X}")
-				out.append(Insn(name))
+				f.pos -= 2
+				break
+	return Insn(name, args)
 
-		last = out[-1]
-		if last.name in blocks and len(last.args) == blocks[last.name][1]:
-			last.body = parse_function(f.sub(last.args.pop()))
-			if last.name == "if" and last.body[-1].name == "goto":
-				assert last.body[-1] == Insn("goto", [insn_pos - f.pos])
-				last.name = "while"
-				last.body.pop()
+def parse_function(f: read.Reader) -> list[Insn]:
+	out: list[Insn] = []
+	while f.remaining:
+		pos = f.pos
+		insn = parse_insn(f)
+
+		if insn.name in blocks and len(insn.args) == blocks[insn.name][1]:
+			insn.body = parse_function(f.sub(insn.args.pop()))
+			if insn.name == "if" and insn.body[-1].name == "goto":
+				assert insn.body[-1] == Insn("goto", [pos - f.pos])
+				insn.name = "while"
+				insn.body.pop()
+
+		out.append(insn)
 	return out
 
 def print_code(code: list[Insn], indent: str = ""):
