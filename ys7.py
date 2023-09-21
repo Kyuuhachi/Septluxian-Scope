@@ -244,7 +244,11 @@ def print_code(code: list[Insn]) -> str:
 				case int(v): args.append(print_term(v))
 				case float(v): args.append(print_term(v))
 				case str(v): args.append(print_term(v))
-				case list(v): args.append(repr(v))
+				case list(v):
+					a = ""
+					for line in v:
+						a += print_term(line) + "\n"
+					args.append("{\n%s}" % indent(a, "\t"))
 				case AExpr(v): args.append(print_expr(v))
 		s += f"{insn.name}({', '.join(args)})"
 		if insn.body is not None:
