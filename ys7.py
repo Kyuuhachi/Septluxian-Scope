@@ -71,7 +71,7 @@ binops = {
 	"/": 6,
 	"%": 6,
 	".": 10,
-	"exprop_missing_op": 100,
+	"expr_missing_op": 100,
 }
 
 def parse_expr(f: read.Reader) -> Expr:
