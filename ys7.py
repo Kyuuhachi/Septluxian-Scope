@@ -41,7 +41,7 @@ def format_expr(e: Expr, prio: int = 1000) -> str:
 	prio2 = 100
 	match e:
 		case int(e): s = repr(e)
-		case float(e): s = repr(e) + "f"
+		case float(e): s = repr(e)
 		case str(e): s = e
 		case Binop(a, op, b):
 			prio2 = binops[op]
@@ -198,6 +198,7 @@ def parse_ys7_scp(f: read.Reader):
 		start = f.u32()
 		print(f"{file}:{name}", end="")
 		print_code(parse_function(f.at(start).sub(length)))
+		print()
 		print()
 
 file = Path("/home/large/kiseki/ys8/script/test.bin")
