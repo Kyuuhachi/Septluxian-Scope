@@ -157,24 +157,17 @@ def parse_insn(f: read.Reader) -> Insn:
 				break
 	return Insn(name, args)
 
-blocks = {
-	"if": 2,
-	"elif": 2,
-	"else": 1,
-	"case": 2,
-	"ExecuteCmd": 2,
-}
-
 def parse_stmt(f: read.Reader) -> Insn:
 	pos = f.pos
 	stmt = parse_insn(f)
 
-	if stmt.name in blocks:
+	if stmt.name in { "if", "elif", "else", "case", "ExecuteCmd" }:
 		stmt.body = parse_block(f.sub(stmt.args.pop()))
-		if stmt.name == "if" and stmt.body[-1].name == "goto":
-			assert stmt.body[-1] == Insn("goto", [pos - f.pos])
-			stmt.name = "while"
-			stmt.body.pop()
+
+	if stmt.name == "if" and stmt.body[-1].name == "goto":
+		assert stmt.body[-1] == Insn("goto", [pos - f.pos])
+		stmt.name = "while"
+		stmt.body.pop()
 
 	if stmt.name == "switch":
 		body = []
@@ -189,7 +182,7 @@ def parse_stmt(f: read.Reader) -> Insn:
 	return stmt
 
 def parse_block(f: read.Reader) -> list[Insn]:
-	out: list[Insn] = []
+	out = []
 	while f.remaining:
 		out.append(parse_stmt(f))
 	return out
