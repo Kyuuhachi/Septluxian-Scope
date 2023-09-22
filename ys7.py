@@ -2,9 +2,7 @@ from __future__ import annotations
 import read
 from pathlib import Path
 
-from common import insn_table, Insn, Expr, Binop, Unop, Nilop, AExpr
-
-insns = insn_table("insn/nayuta.txt")
+from common import insn_table, InsnTable, Insn, Expr, Binop, Unop, Nilop, AExpr
 
 binops = {
 	"!=": 4,
@@ -77,7 +75,7 @@ def parse_expr(f: read.Reader) -> Expr:
 		binop("expr_missing_op")
 	return pop()
 
-def parse_insn(f: read.Reader) -> Insn:
+def parse_insn(f: read.Reader, insns: InsnTable) -> Insn:
 	op = f.u16()
 	name = insns.get(op, f"op_{op:04X}")
 	args = []
@@ -118,16 +116,16 @@ def fix_break(code: list[Insn], end: int):
 		if i.body is not None and i.name not in { "switch", "while" }:
 			fix_break(i.body, end)
 
-def parse_stmt(f: read.Reader) -> Insn:
+def parse_stmt(f: read.Reader, insns: InsnTable) -> Insn:
 	pos = f.pos
-	stmt = parse_insn(f)
+	stmt = parse_insn(f, insns)
 	stmt.pos = f.pos
 
 	if stmt.name in { "break", "goto" }:
 		stmt.args[-1] += stmt.pos
 
 	if stmt.name in { "if", "elif", "else", "case", "default", "ExecuteCmd" }:
-		stmt.body = parse_block(f, stmt.args.pop())
+		stmt.body = parse_block(f, stmt.args.pop(), insns)
 
 	if stmt.name == "if" and stmt.body[-1].name == "goto":
 		assert stmt.body[-1] == Insn("goto", [pos])
@@ -139,7 +137,7 @@ def parse_stmt(f: read.Reader) -> Insn:
 		stmt.body = []
 		while True:
 			pos = f.pos
-			insn = parse_stmt(f)
+			insn = parse_stmt(f, insns)
 			stmt.body.append(insn)
 			if insn.name in {"return", "endif"}:
 				break
@@ -148,11 +146,11 @@ def parse_stmt(f: read.Reader) -> Insn:
 
 	return stmt
 
-def parse_block(f: read.Reader, length: int) -> list[Insn]:
+def parse_block(f: read.Reader, length: int, insns: InsnTable) -> list[Insn]:
 	out = []
 	end = f.pos + length
 	while f.pos < end:
-		out.append(parse_stmt(f))
+		out.append(parse_stmt(f, insns))
 	assert f.pos == end
 	return out
 
@@ -243,7 +241,7 @@ def print_code(code: list[Insn]) -> str:
 			s += "\n"
 	return "{\n%s}" % indent(s, "\t")
 
-def parse_ys7_scp(f: read.Reader):
+def parse_ys7_scp(f: read.Reader, insns: InsnTable):
 	f.check(b"YS7_SCP")
 	f.check_u32(0)
 	unk = f[9]
@@ -252,15 +250,18 @@ def parse_ys7_scp(f: read.Reader):
 		name = f[32].rstrip(b"\0").decode("cp932")
 		length = f.u32()
 		start = f.u32()
-		code = parse_block(f.at(start), length)
+		code = parse_block(f.at(start), length, insns)
 		restore_return(code)
 		strip_tail(code, "return")
 		print(f"{file}:{name} {print_code(code)}")
 		print()
 
+# insns_ys8 = insn_table("insn/ys8.txt")
 # file = Path("/home/large/kiseki/ys8/script/test.bin")
-# parse_ys7_scp(read.Reader(file.read_bytes()))
+# parse_ys7_scp(read.Reader(file.read_bytes()), insns_ys8)
 # for file in sorted(Path("/home/large/kiseki/ys8/script/").glob("*.bin")):
-# 	parse_ys7_scp(read.Reader(file.read_bytes()))
+# 	parse_ys7_scp(read.Reader(file.read_bytes()), insns_ys8)
+
+insns_nayuta = insn_table("insn/nayuta.txt")
 for file in sorted(Path("/home/large/kiseki/nayuta/US/script/").glob("*.bin")):
-	parse_ys7_scp(read.Reader(file.read_bytes()))
+	parse_ys7_scp(read.Reader(file.read_bytes()), insns_nayuta)
