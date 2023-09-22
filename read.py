@@ -15,8 +15,11 @@ class Reader:
 	pos: int = 0
 
 	def __repr__(self) -> str:
-		return f"{type(self).__name__}({len(self.data)})"
+		return f"{type(self).__name__}({len(self)})"
 	__str__ = __repr__
+
+	def __len__(self) -> int:
+		return len(self.data)
 
 	def __getitem__(self, n: int) -> bytes:
 		v = self.data[self.pos:self.pos+n]

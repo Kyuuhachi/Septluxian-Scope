@@ -8,20 +8,29 @@ def parse_ys7_scp(f: read.Reader, insns: InsnTable) -> Ys7Scp:
 	f.check_u32(0)
 	version = f.u8()
 	hash = f[8]
+	nfuncs = f.u32()
+
+	datastart0 = f.pos + 40 * nfuncs
+	datastart = datastart0
 
 	functions = {}
-
-	for _ in range(f.u32()):
+	for _ in range(nfuncs):
 		name = f[32].rstrip(b"\0").decode("cp932")
 		length = f.u32()
 		start = f.u32()
-		functions[name] = parse_func(f.at(start), length, insns)
+		assert start == datastart
+		assert name not in functions, name
+		functions[name] = parse_func(f.at(start), length, insns, version)
+		datastart += length
+
+	assert f.pos == datastart0
 
 	return Ys7Scp(version, hash, functions)
 
-def parse_func(f: read.Reader, length: int, insns: InsnTable) -> list[Insn]:
+def parse_func(f: read.Reader, length: int, insns: InsnTable, version: int) -> list[Insn]:
 	code = parse_block(f, length, insns)
-	restore_return(code)
+	if version == 6:
+		restore_return(code)
 	strip_tail(code, "return")
 	return code
 
@@ -101,6 +110,46 @@ def parse_insn(f: read.Reader, insns: InsnTable) -> Insn:
 				break
 	return Insn(name, args)
 
+binop = {
+	0x01: "!=",
+	0x03: "*",
+	0x04: "/",
+	0x05: "%",
+	0x06: "+",
+	0x07: "-",
+	0x09: ">",
+	0x0A: ">=",
+	0x0C: "<=",
+	0x0D: "<",
+	0x0E: "==",
+	0x10: "&&",
+	0x11: "&",
+	0x12: "||",
+	0x13: "|",
+	0x2D: ".",
+}
+
+unop = {
+	0x02: "!",
+	0x42: "-",
+}
+
+index = {
+	0x1F: "FLAG",
+	0x20: "WORK",
+	0x21: "CHRWORK",
+	0x22: "ITEMWORK",
+	0x23: "ALLITEMWORK",
+	0x48: "GOTITEMWORK",
+}
+
+func = {
+	0x29: "rand",
+	0x35: "IsPartyIn",
+	0x3D: "IsMagicItem",
+	0x47: "IsTurning",
+}
+
 def parse_expr(f: read.Reader) -> Expr:
 	ops = []
 	def pop() -> Expr:
@@ -146,7 +195,7 @@ def parse_expr(f: read.Reader) -> Expr:
 			case op: raise ValueError(hex(op))
 	assert not f.remaining
 	while len(ops) > 1:
-		binop("expr_missing_op")
+		return Call(None, "expr_missing", ops)
 	return pop()
 
 

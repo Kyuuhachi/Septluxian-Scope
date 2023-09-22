@@ -57,3 +57,18 @@ def insn_table(path: str|Path) -> InsnTable:
 			case [v]: insns[n] = v; n += 1
 			case _: raise ValueError(line)
 	return insns
+
+A = T.TypeVar("A")
+def diff(a: A, b: A):
+	if a != b:
+		import pprint, difflib
+		text1 = pprint.pformat(a).splitlines(keepends=True)
+		text2 = pprint.pformat(b).splitlines(keepends=True)
+		for line in difflib.Differ().compare(text1, text2):
+			match line[0]:
+				case " ": pass
+				case "-": print("\x1B[31m" + line + "\x1B[m", end="")
+				case "+": print("\x1B[32m" + line + "\x1B[m", end="")
+				case "?": print(line, end="")
+				case _: raise ValueError(line)
+		raise AssertionError
