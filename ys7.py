@@ -1,45 +1,10 @@
 from __future__ import annotations
-import typing as T
 import read
-import dataclasses as dc
 from pathlib import Path
 
-insns = {}
-n = 0
-for line in open("insn/ys8.txt"):
-	match line.split("#")[0].split():
-		case []: pass
-		case ["-", skip]: n += int(skip)
-		case [v]: insns[n] = v; n += 1
-		case _: raise ValueError(line)
+from common import insn_table, Insn, Expr, Binop, Unop, Nilop, AExpr
 
-@dc.dataclass
-class Insn:
-	name: str
-	args: list[int | float | str | AExpr | list[str]] = dc.field(default_factory=list)
-	body: list[Insn] | None = None
-
-@dc.dataclass
-class Binop:
-	a: Expr
-	op: str
-	b: Expr
-
-@dc.dataclass
-class Unop:
-	pre: str
-	a: Expr
-	suf: str
-
-@dc.dataclass
-class Nilop:
-	op: str
-
-Expr: T.TypeAlias = int | str | float | Binop | Unop | Nilop
-
-@dc.dataclass
-class AExpr:
-	expr: Expr
+insns = insn_table("insn/nayuta.txt")
 
 binops = {
 	"!=": 4,
@@ -294,9 +259,9 @@ def parse_ys7_scp(f: read.Reader):
 		print(f"{file}:{name} {print_code(code)}")
 		print()
 
-file = Path("/home/large/kiseki/ys8/script/test.bin")
-parse_ys7_scp(read.Reader(file.read_bytes()))
+# file = Path("/home/large/kiseki/ys8/script/test.bin")
+# parse_ys7_scp(read.Reader(file.read_bytes()))
 # for file in sorted(Path("/home/large/kiseki/ys8/script/").glob("*.bin")):
 # 	parse_ys7_scp(read.Reader(file.read_bytes()))
-# for file in sorted(Path("/home/large/kiseki/nayuta/US/script/").glob("*.bin")):
-# 	parse_ys7_scp(read.Reader(file.read_bytes()))
+for file in sorted(Path("/home/large/kiseki/nayuta/US/script/").glob("*.bin")):
+	parse_ys7_scp(read.Reader(file.read_bytes()))
