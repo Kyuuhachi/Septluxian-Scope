@@ -263,18 +263,20 @@ def parse_ys7_scp(f: read.Reader, insns: InsnTable) -> Ys7Scp:
 
 	return Ys7Scp(version, hash, functions)
 
-def parse_and_print(f: read.Reader, insns: InsnTable):
+def parse_and_print(file: Path, insns: InsnTable):
+	import sys
+	print(file, file=sys.stderr, end="", flush=True)
+	f = read.Reader(file.read_bytes())
 	scp = parse_ys7_scp(f, insns)
+	print('.', file=sys.stderr)
 	for name, code in scp.functions.items():
 		print(f"{file}:{name} {print_code(code)}")
 		print()
 
-# insns_ys8 = insn_table("insn/ys8.txt")
-# file = Path("/home/large/kiseki/ys8/script/test.bin")
-# parse_and_print(read.Reader(file.read_bytes()), insns_ys8)
-# for file in sorted(Path("/home/large/kiseki/ys8/script/").glob("*.bin")):
-# 	parse_and_print(read.Reader(file.read_bytes()), insns_ys8)
+insns_ys8 = insn_table("insn/ys8.txt")
+for file in sorted(Path("/home/large/kiseki/ys8/script/").glob("*.bin")):
+	parse_and_print(file, insns_ys8)
 
-insns_nayuta = insn_table("insn/nayuta.txt")
-for file in sorted(Path("/home/large/kiseki/nayuta/US/script/").glob("*.bin")):
-	parse_and_print(read.Reader(file.read_bytes()), insns_nayuta)
+# insns_nayuta = insn_table("insn/nayuta.txt")
+# for file in sorted(Path("/home/large/kiseki/nayuta/US/script/").glob("*.bin")):
+# 	parse_and_print(file, insns_nayuta)
