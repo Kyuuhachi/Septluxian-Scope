@@ -36,8 +36,8 @@ class Reader:
 		return v
 
 	@property
-	def remaining(self) -> bytes:
-		return self.data[self.pos:]
+	def remaining(self) -> int:
+		return len(self.data) - self.pos
 
 	def at(self: R, pos: int|None = None) -> R:
 		return dc.replace(self, pos = pos if pos is not None else self.pos)
