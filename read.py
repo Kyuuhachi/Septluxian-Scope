@@ -75,6 +75,13 @@ class Reader:
 	def check_i32(self, v: int): _check(self, self.i32, v)
 	def check_i64(self, v: int): _check(self, self.i64, v)
 
+try:
+	import numpy
+	f32 = Reader.f32
+	Reader.f32 = lambda self: float(str(numpy.float32(f32(self))))
+except ImportError:
+	pass
+
 def _check(f: Reader, func: T.Callable[[], A], v: A):
 	pos = f.pos
 	w = func()
