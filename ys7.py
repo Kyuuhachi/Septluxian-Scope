@@ -137,7 +137,6 @@ def parse_stmt(f: read.Reader) -> Insn:
 
 	if stmt.name == "switch":
 		stmt.body = []
-		end = set()
 		while True:
 			pos = f.pos
 			insn = parse_stmt(f)
