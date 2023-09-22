@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+from pathlib import Path
 from common import Insn, Binop, Unop, Call, Index, AExpr, Ys7Scp
 
 try:
 	from lark import Lark, Transformer, v_args
-	parser = Lark(open("grammar.g").read(), parser="lalr")
+	parser = Lark((Path(__file__).parent / "grammar.g").read_text(), parser="lalr")
 except ImportError:
 	from grammar import Lark_StandAlone, Transformer, v_args
+	# Generate with
+	#   python -m lark.tools.standalone --maybe_placeholders grammar.g -o grammar.py
+	# Unfortunately PYTHONHASHSEED doesn't work
 	parser = Lark_StandAlone(parser="lalr")
 	assert parser.options.maybe_placeholders, "grammar not compliled correctly"
 
