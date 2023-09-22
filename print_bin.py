@@ -4,13 +4,12 @@ import typing as T
 import dataclasses as dc
 import struct
 
-from common import InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
+from common import insn_tables, InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
 import parse_bin
 
 RevInsnTable: T.TypeAlias = dict[str, int]
 
-def write_ys7_scp(scp: Ys7Scp, insns: InsnTable) -> bytes:
-	_insns = { v: k for k, v in insns.items() }
+def write_ys7_scp(scp: Ys7Scp, insns: InsnTable | None = None) -> bytes:
 	f = Writer()
 	f.write(b"YS7_SCP")
 	f.u32(0)
@@ -18,6 +17,11 @@ def write_ys7_scp(scp: Ys7Scp, insns: InsnTable) -> bytes:
 	assert len(scp.hash) == 8
 	f.write(scp.hash)
 	f.u32(len(scp.functions))
+
+	if insns is None:
+		insns = insn_tables.get(scp.version, {})
+
+	_insns = { v: k for k, v in insns.items() }
 
 	datastart = len(f) + 40 * len(scp.functions)
 

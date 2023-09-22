@@ -1,14 +1,17 @@
 from __future__ import annotations
 import read
 
-from common import InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
+from common import insn_tables, InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
 
-def parse_ys7_scp(f: read.Reader, insns: InsnTable) -> Ys7Scp:
+def parse_ys7_scp(f: read.Reader, insns: InsnTable | None = None) -> Ys7Scp:
 	f.check(b"YS7_SCP")
 	f.check_u32(0)
 	version = f.u8()
 	hash = f[8]
 	nfuncs = f.u32()
+
+	if insns is None:
+		insns = insn_tables.get(version, {})
 
 	datastart0 = f.pos + 40 * nfuncs
 	datastart = datastart0

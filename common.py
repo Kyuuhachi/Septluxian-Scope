@@ -58,6 +58,11 @@ def insn_table(path: str|Path) -> InsnTable:
 			case _: raise ValueError(line)
 	return insns
 
+insn_tables = {
+	2: insn_table(Path(__file__).parent / "insn/nayuta.txt"),
+	6: insn_table(Path(__file__).parent / "insn/ys8.txt"),
+}
+
 A = T.TypeVar("A")
 def diff(a: A, b: A):
 	if a != b:
