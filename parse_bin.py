@@ -3,7 +3,8 @@ import read
 
 from common import insn_tables, InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
 
-def parse_ys7_scp(f: read.Reader, insns: InsnTable | None = None) -> Ys7Scp:
+def parse_ys7_scp(data: bytes, insns: InsnTable | None = None) -> Ys7Scp:
+	f = read.Reader(data)
 	f.check(b"YS7_SCP")
 	f.check_u32(0)
 	version = f.u8()
@@ -22,15 +23,18 @@ def parse_ys7_scp(f: read.Reader, insns: InsnTable | None = None) -> Ys7Scp:
 		length = f.u32()
 		start = f.u32()
 		assert start == datastart
-		functions.append((name, parse_func(f.at(start), length, insns, version)))
+		functions.append((name, parse_func(f.at(start)[length], insns, version)))
 		datastart += length
 
 	assert f.pos == datastart0
+	assert datastart == len(data)
 
 	return Ys7Scp(version, hash, functions)
 
-def parse_func(f: read.Reader, length: int, insns: InsnTable, version: int) -> list[Insn]:
-	code = parse_block(f, length, insns)
+def parse_func(data: bytes, insns: InsnTable, version: int) -> list[Insn]:
+	f = read.Reader(data)
+	code = parse_block(f, len(data), insns)
+	assert not f.remaining
 	if version == 6:
 		restore_return(code)
 	strip_tail(code, "return")

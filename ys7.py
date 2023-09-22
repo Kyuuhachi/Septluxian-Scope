@@ -1,7 +1,6 @@
 from __future__ import annotations
 assert __name__ == "__main__"
 
-import read
 from pathlib import Path
 
 from common import insn_table, InsnTable
@@ -14,12 +13,12 @@ def parse_and_print(file: Path):
 	import sys
 	print(file, file=sys.stderr, end="", flush=True)
 	data = file.read_bytes()
-	scp = parse_bin.parse_ys7_scp(read.Reader(data))
+	scp = parse_bin.parse_ys7_scp(data)
 	print('.', file=sys.stderr)
 	redata = print_bin.write_ys7_scp(scp)
 	if data != redata:
 		print(len(data), len(redata))
-		rescp = parse_bin.parse_ys7_scp(read.Reader(redata))
+		rescp = parse_bin.parse_ys7_scp(redata)
 		assert scp == rescp
 		for i, (a, b) in enumerate(zip(data, redata)):
 			if a != b:
