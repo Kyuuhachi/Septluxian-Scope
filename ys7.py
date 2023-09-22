@@ -2,7 +2,7 @@ from __future__ import annotations
 import read
 from pathlib import Path
 
-from common import insn_table, InsnTable, Insn, Expr, Binop, Unop, Nilop, AExpr
+from common import insn_table, InsnTable, Insn, Expr, Binop, Unop, Nilop, AExpr, Ys7Scp
 
 binops = {
 	"!=": 4,
@@ -241,10 +241,13 @@ def print_code(code: list[Insn]) -> str:
 			s += "\n"
 	return "{\n%s}" % indent(s, "\t")
 
-def parse_ys7_scp(f: read.Reader, insns: InsnTable):
+def parse_ys7_scp(f: read.Reader, insns: InsnTable) -> Ys7Scp:
 	f.check(b"YS7_SCP")
 	f.check_u32(0)
-	unk = f[9]
+	version = f.u8()
+	hash = f[8]
+
+	functions = {}
 
 	for _ in range(f.u32()):
 		name = f[32].rstrip(b"\0").decode("cp932")
@@ -253,15 +256,22 @@ def parse_ys7_scp(f: read.Reader, insns: InsnTable):
 		code = parse_block(f.at(start), length, insns)
 		restore_return(code)
 		strip_tail(code, "return")
+		functions[name] = code
+
+	return Ys7Scp(version, hash, functions)
+
+def parse_and_print(f: read.Reader, insns: InsnTable):
+	scp = parse_ys7_scp(f, insns)
+	for name, code in scp.functions.items():
 		print(f"{file}:{name} {print_code(code)}")
 		print()
 
 # insns_ys8 = insn_table("insn/ys8.txt")
 # file = Path("/home/large/kiseki/ys8/script/test.bin")
-# parse_ys7_scp(read.Reader(file.read_bytes()), insns_ys8)
+# parse_and_print(read.Reader(file.read_bytes()), insns_ys8)
 # for file in sorted(Path("/home/large/kiseki/ys8/script/").glob("*.bin")):
-# 	parse_ys7_scp(read.Reader(file.read_bytes()), insns_ys8)
+# 	parse_and_print(read.Reader(file.read_bytes()), insns_ys8)
 
 insns_nayuta = insn_table("insn/nayuta.txt")
 for file in sorted(Path("/home/large/kiseki/nayuta/US/script/").glob("*.bin")):
-	parse_ys7_scp(read.Reader(file.read_bytes()), insns_nayuta)
+	parse_and_print(read.Reader(file.read_bytes()), insns_nayuta)

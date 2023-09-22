@@ -4,18 +4,6 @@ import dataclasses as dc
 from pathlib import Path
 
 @dc.dataclass
-class Insn:
-	name: str
-	args: list[Arg] = dc.field(default_factory=list)
-	body: list[Insn] | None = None
-
-@dc.dataclass
-class AExpr:
-	expr: Expr
-
-Arg: T.TypeAlias = int | float | str | AExpr | list[str]
-
-@dc.dataclass
 class Binop:
 	a: Expr
 	op: str
@@ -32,6 +20,24 @@ class Nilop:
 	op: str
 
 Expr: T.TypeAlias = int | str | float | Binop | Unop | Nilop
+
+@dc.dataclass
+class Insn:
+	name: str
+	args: list[Arg] = dc.field(default_factory=list)
+	body: list[Insn] | None = None
+
+@dc.dataclass
+class AExpr:
+	expr: Expr
+
+Arg: T.TypeAlias = int | float | str | AExpr | list[str]
+
+@dc.dataclass
+class Ys7Scp:
+	version: int
+	hash: bytes # length 8
+	functions: dict[str, list[Insn]]
 
 InsnTable: T.TypeAlias = dict[int, str]
 
