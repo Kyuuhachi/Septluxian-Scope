@@ -19,6 +19,88 @@ def parse_ys7_scp(f: read.Reader, insns: InsnTable) -> Ys7Scp:
 
 	return Ys7Scp(version, hash, functions)
 
+def parse_func(f: read.Reader, length: int, insns: InsnTable) -> list[Insn]:
+	code = parse_block(f, length, insns)
+	restore_return(code)
+	strip_tail(code, "return")
+	return code
+
+def parse_block(f: read.Reader, length: int, insns: InsnTable) -> list[Insn]:
+	out = []
+	end = f.pos + length
+	while f.pos < end:
+		out.append(parse_stmt(f, insns))
+	assert f.pos == end
+	return out
+
+def parse_stmt(f: read.Reader, insns: InsnTable) -> Insn:
+	pos = f.pos
+	stmt = parse_insn(f, insns)
+	stmt.pos = f.pos
+
+	if stmt.name in { "break", "goto" }:
+		stmt.args[-1] += stmt.pos
+
+	if stmt.name in { "if", "elif", "else", "case", "default", "ExecuteCmd" }:
+		stmt.body = parse_block(f, stmt.args.pop(), insns)
+
+	if stmt.name == "if" and stmt.body[-1].name == "goto":
+		assert stmt.body[-1] == Insn("goto", [pos])
+		stmt.name = "while"
+		stmt.body.pop()
+		fix_break(stmt.body, f.pos)
+
+	if stmt.name == "switch":
+		stmt.body = []
+		while True:
+			pos = f.pos
+			insn = parse_stmt(f, insns)
+			stmt.body.append(insn)
+			if insn.name in {"return", "endif"}:
+				break
+			assert insn.name in {"case", "default"}, insn
+		fix_break(stmt.body, f.pos)
+
+	match stmt.name:
+		case "Message": stmt.args[-1] = stmt.args[-1].split("\\n")
+		case "OpenMessage": stmt.args[-1] = stmt.args[-1].split("\\n")
+		case "Message2": stmt.args[3:] = [stmt.args[3:]]
+		case "YesNoMenu": stmt.args[1] = stmt.args[1].split("\\n")
+		case "GetItemMessageExPlus": stmt.args[3] = stmt.args[3].split("\\n")
+		case "NoiSystemMessage": stmt.args[-1] = stmt.args[-1].split("\r\n")
+
+	return stmt
+
+def parse_insn(f: read.Reader, insns: InsnTable) -> Insn:
+	op = f.u16()
+	name = insns.get(op, f"op_{op:04X}")
+	args = []
+	while f.remaining:
+		match f.u16():
+			case 0x82DD:
+				args.append(f.i32())
+			case 0x82DE:
+				args.append(f.f32())
+			case 0x82DF:
+				args.append(f[f.u32()].decode("cp932"))
+			case 0x82E0:
+				args.append(AExpr(parse_expr(f.sub(f.u32()))))
+			case 0x2020:
+				nlines, nbytes = f.u32(), f.u32()
+				starts = [f.u32() for _ in range(nlines)]
+				text = f[nbytes]
+				val = []
+				for a, b in zip(starts, starts[1:] + [nbytes]):
+					s = text[a:b].decode("cp932")
+					assert s.endswith("\x01")
+					val.append(s[:-1])
+				args.append(val)
+
+			case op:
+				f.pos -= 2
+				break
+	return Insn(name, args)
+
 def parse_expr(f: read.Reader) -> Expr:
 	ops = []
 	def pop() -> Expr:
@@ -67,87 +149,6 @@ def parse_expr(f: read.Reader) -> Expr:
 		binop("expr_missing_op")
 	return pop()
 
-def parse_insn(f: read.Reader, insns: InsnTable) -> Insn:
-	op = f.u16()
-	name = insns.get(op, f"op_{op:04X}")
-	args = []
-	while f.remaining:
-		match f.u16():
-			case 0x82DD:
-				args.append(f.i32())
-			case 0x82DE:
-				args.append(f.f32())
-			case 0x82DF:
-				args.append(f[f.u32()].decode("cp932"))
-			case 0x82E0:
-				args.append(AExpr(parse_expr(f.sub(f.u32()))))
-			case 0x2020:
-				nlines, nbytes = f.u32(), f.u32()
-				starts = [f.u32() for _ in range(nlines)]
-				text = f[nbytes]
-				val = []
-				for a, b in zip(starts, starts[1:] + [nbytes]):
-					s = text[a:b].decode("cp932")
-					assert s.endswith("\x01")
-					val.append(s[:-1])
-				args.append(val)
-
-			case op:
-				f.pos -= 2
-				break
-	return Insn(name, args)
-
-def parse_stmt(f: read.Reader, insns: InsnTable) -> Insn:
-	pos = f.pos
-	stmt = parse_insn(f, insns)
-	stmt.pos = f.pos
-
-	if stmt.name in { "break", "goto" }:
-		stmt.args[-1] += stmt.pos
-
-	if stmt.name in { "if", "elif", "else", "case", "default", "ExecuteCmd" }:
-		stmt.body = parse_block(f, stmt.args.pop(), insns)
-
-	if stmt.name == "if" and stmt.body[-1].name == "goto":
-		assert stmt.body[-1] == Insn("goto", [pos])
-		stmt.name = "while"
-		stmt.body.pop()
-		fix_break(stmt.body, f.pos)
-
-	if stmt.name == "switch":
-		stmt.body = []
-		while True:
-			pos = f.pos
-			insn = parse_stmt(f, insns)
-			stmt.body.append(insn)
-			if insn.name in {"return", "endif"}:
-				break
-			assert insn.name in {"case", "default"}, insn
-		fix_break(stmt.body, f.pos)
-
-	match stmt.name:
-		case "Message": stmt.args[-1] = stmt.args[-1].split("\\n")
-		case "OpenMessage": stmt.args[-1] = stmt.args[-1].split("\\n")
-		case "Message2": stmt.args[3:] = [stmt.args[3:]]
-		case "YesNoMenu": stmt.args[1] = stmt.args[1].split("\\n")
-		case "GetItemMessageExPlus": stmt.args[3] = stmt.args[3].split("\\n")
-		case "NoiSystemMessage": stmt.args[-1] = stmt.args[-1].split("\r\n")
-
-	return stmt
-
-def parse_block(f: read.Reader, length: int, insns: InsnTable) -> list[Insn]:
-	out = []
-	end = f.pos + length
-	while f.pos < end:
-		out.append(parse_stmt(f, insns))
-	assert f.pos == end
-	return out
-
-def parse_func(f: read.Reader, length: int, insns: InsnTable) -> list[Insn]:
-	code = parse_block(f, length, insns)
-	restore_return(code)
-	strip_tail(code, "return")
-	return code
 
 def fix_break(code: list[Insn], end: int):
 	for i in code:
