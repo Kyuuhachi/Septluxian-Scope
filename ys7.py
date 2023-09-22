@@ -154,6 +154,12 @@ def parse_block(f: read.Reader, length: int, insns: InsnTable) -> list[Insn]:
 	assert f.pos == end
 	return out
 
+def parse_func(f: read.Reader, length: int, insns: InsnTable) -> list[Insn]:
+	code = parse_block(f, length, insns)
+	restore_return(code)
+	strip_tail(code, "return")
+	return code
+
 tails = {
 	"if": "endif",
 	"elif": "endif",
@@ -253,10 +259,7 @@ def parse_ys7_scp(f: read.Reader, insns: InsnTable) -> Ys7Scp:
 		name = f[32].rstrip(b"\0").decode("cp932")
 		length = f.u32()
 		start = f.u32()
-		code = parse_block(f.at(start), length, insns)
-		restore_return(code)
-		strip_tail(code, "return")
-		functions[name] = code
+		functions[name] = parse_func(f.at(start), length, insns)
 
 	return Ys7Scp(version, hash, functions)
 
