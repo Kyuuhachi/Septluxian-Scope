@@ -12,7 +12,8 @@ def print_str(s: str) -> str:
 def print_expr(e: Expr, prio: int = 1000) -> str:
 	prio2 = 100
 	match e:
-		case int(e) | float(e): r = str(e)
+		case int(e): r = str(e)
+		case float(e): r = f"{e:f}"
 		case str(e): r = print_str(e)
 		case Binop(a, op, b):
 			prio2 = binops[op]
@@ -29,7 +30,8 @@ def print_code(code: list[Insn]) -> str:
 		args = []
 		for a in insn.args:
 			match a:
-				case int(e) | float(e): r = str(e)
+				case int(e): r = str(e)
+				case float(e): r = f"{e:f}"
 				case str(e): r = print_str(e)
 				case list(v):
 					a = "".join([print_str(line) + "\n" for line in v])

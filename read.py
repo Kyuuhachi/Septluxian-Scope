@@ -60,7 +60,9 @@ class Reader:
 	def i32(self) -> int: return self.unpack("i")[0]
 	def i64(self) -> int: return self.unpack("q")[0]
 
-	def f32(self) -> float: return self.unpack("f")[0]
+	def f32(self) -> float:
+		f = self.unpack("f")[0]
+		return float(f"{f:f}")
 	def f64(self) -> float: return self.unpack("d")[0]
 
 	def check(self, data: bytes): _check(self, lambda: self[len(data)], data)
@@ -74,13 +76,6 @@ class Reader:
 	def check_i16(self, v: int): _check(self, self.i16, v)
 	def check_i32(self, v: int): _check(self, self.i32, v)
 	def check_i64(self, v: int): _check(self, self.i64, v)
-
-try:
-	import numpy
-	f32 = Reader.f32
-	Reader.f32 = lambda self: float(str(numpy.float32(f32(self))))
-except ImportError:
-	pass
 
 def _check(f: Reader, func: T.Callable[[], A], v: A):
 	pos = f.pos
