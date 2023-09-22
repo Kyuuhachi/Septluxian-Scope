@@ -23,7 +23,7 @@ class Parser(Transformer):
 
 	def start(self, header, *functions):
 		(version, hash) = header
-		return Ys7Scp(version, hash, dict(functions))
+		return Ys7Scp(version, hash, list(functions))
 
 	header = lambda _, version, hash: (int(version), bytes.fromhex(hash))
 	function = lambda _, name, block: (name, block)

@@ -22,7 +22,7 @@ def write_ys7_scp(scp: Ys7Scp, insns: InsnTable) -> bytes:
 	datastart = len(f) + 40 * len(scp.functions)
 
 	data = bytearray()
-	for name, code in scp.functions.items():
+	for name, code in scp.functions:
 		name = name.encode("cp932").ljust(32, b"\0")
 		assert len(name) == 32
 		funcdata = write_func(code, _insns, scp.version)

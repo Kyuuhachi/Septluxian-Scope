@@ -80,6 +80,6 @@ def print_ys7_scp(scp: Ys7Scp) -> str:
 	s += f"version {scp.version}\n"
 	s += f"hash {print_str(scp.hash.hex().upper())}\n"
 
-	for name, code in scp.functions.items():
+	for name, code in scp.functions:
 		s += f"\nfunction {print_str(name)} {print_code(code)}\n"
 	return s

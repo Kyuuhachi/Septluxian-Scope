@@ -13,14 +13,13 @@ def parse_ys7_scp(f: read.Reader, insns: InsnTable) -> Ys7Scp:
 	datastart0 = f.pos + 40 * nfuncs
 	datastart = datastart0
 
-	functions = {}
+	functions = []
 	for _ in range(nfuncs):
 		name = f[32].rstrip(b"\0").decode("cp932")
 		length = f.u32()
 		start = f.u32()
 		assert start == datastart
-		assert name not in functions, name
-		functions[name] = parse_func(f.at(start), length, insns, version)
+		functions.append((name, parse_func(f.at(start), length, insns, version)))
 		datastart += length
 
 	assert f.pos == datastart0

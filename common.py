@@ -43,7 +43,7 @@ Arg: T.TypeAlias = int | float | str | AExpr | list[str]
 class Ys7Scp:
 	version: int
 	hash: bytes # length 8
-	functions: dict[str, list[Insn]]
+	functions: list[tuple[str, list[Insn]]]
 
 InsnTable: T.TypeAlias = dict[int, str]
 
