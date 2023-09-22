@@ -61,7 +61,7 @@ def parse_expr(f: read.Reader) -> Expr:
 			case 0x2D: binop(".")
 			case 0x35: unop("IsPartyIn(", ")")
 			case 0x3D: unop("IsMagicItem(", ")")
-			case 0x42: unop("-", "")
+			case 0x42: unop("-(", ")")
 			case 0x47: unop("", ".IsTurning()")
 			case 0x48: unop("GOTITEMWORK[", "]")
 			case op: ops.append(Nilop(f"expr_{op:X}"))
