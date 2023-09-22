@@ -1,18 +1,17 @@
 from __future__ import annotations
-from textwrap import indent
 
 from common import Insn, Binop, Unop, Call, Index, AExpr, Ys7Scp
 
 try:
-	from lark import Lark, Transformer as _Transformer, v_args
+	from lark import Lark, Transformer, v_args
 	parser = Lark(open("grammar.g").read(), parser="lalr")
 except ImportError:
-	from grammar import Lark_StandAlone, Transformer as _Transformer, v_args
+	from grammar import Lark_StandAlone, Transformer, v_args
 	parser = Lark_StandAlone(parser="lalr")
 	assert parser.options.maybe_placeholders, "grammar not compliled correctly"
 
 @v_args(inline=True)
-class Transformer(_Transformer):
+class Parser(Transformer):
 	def str(self, v):
 		return v[1:-1].replace('""', '"')
 
@@ -29,7 +28,7 @@ class Transformer(_Transformer):
 	header = lambda _, version, hash: (int(version), bytes.fromhex(hash))
 	function = lambda _, name, block: (name, block)
 
-	block = args = text = lambda self, *args: list(args)
+	block = args = text = lambda _, *args: list(args)
 
 	stmt = Insn
 
@@ -49,4 +48,4 @@ class Transformer(_Transformer):
 		raise AttributeError(name, tokens)
 
 def parse_ys7_scp(src: str) -> Ys7Scp:
-	return Transformer().transform(parser.parse(src))
+	return Parser().transform(parser.parse(src))
