@@ -144,6 +144,14 @@ def parse_stmt(f: read.Reader, insns: InsnTable) -> Insn:
 			assert insn.name in {"case", "default"}, insn
 		fix_break(stmt.body, f.pos)
 
+	match stmt.name:
+		case "Message": stmt.args[-1] = stmt.args[-1].split("\\n")
+		case "OpenMessage": stmt.args[-1] = stmt.args[-1].split("\\n")
+		case "Message2": stmt.args[3:] = [stmt.args[3:]]
+		case "YesNoMenu": stmt.args[1] = stmt.args[1].split("\\n")
+		case "GetItemMessageExPlus": stmt.args[3] = stmt.args[3].split("\\n")
+		case "NoiSystemMessage": stmt.args[-1] = stmt.args[-1].split("\r\n")
+
 	return stmt
 
 def parse_block(f: read.Reader, length: int, insns: InsnTable) -> list[Insn]:
@@ -228,9 +236,6 @@ def print_code(code: list[Insn]) -> str:
 				case float(v):
 					args.append(print_term(v))
 				case str(v):
-					if insn.name == "NoiSystemMessage":
-						assert '\\' not in v
-						v = v.replace("\r\n", "\\n")
 					args.append(print_term(v))
 				case list(v):
 					a = ""
