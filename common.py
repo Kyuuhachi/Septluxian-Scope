@@ -6,8 +6,14 @@ from pathlib import Path
 @dc.dataclass
 class Insn:
 	name: str
-	args: list[int | float | str | AExpr | list[str]] = dc.field(default_factory=list)
+	args: list[Arg] = dc.field(default_factory=list)
 	body: list[Insn] | None = None
+
+@dc.dataclass
+class AExpr:
+	expr: Expr
+
+Arg: T.TypeAlias = int | float | str | AExpr | list[str]
 
 @dc.dataclass
 class Binop:
@@ -26,11 +32,6 @@ class Nilop:
 	op: str
 
 Expr: T.TypeAlias = int | str | float | Binop | Unop | Nilop
-
-@dc.dataclass
-class AExpr:
-	expr: Expr
-
 
 InsnTable: T.TypeAlias = dict[int, str]
 
