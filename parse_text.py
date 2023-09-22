@@ -34,7 +34,7 @@ class Parser(Transformer):
 
 	block = args = text = lambda _, *args: list(args)
 
-	stmt = Insn
+	stmt = lambda _, name, args, body: Insn(name.value, args, body)
 
 	expr = AExpr
 	binop = lambda _, a, op, b: Binop(a, op.value, b)
