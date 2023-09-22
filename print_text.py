@@ -1,7 +1,32 @@
 from __future__ import annotations
 from textwrap import indent
 
-from common import binops, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
+from common import Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
+
+binops = {
+	"|": 1,
+	"||": 1,
+	"&": 3,
+	"&&": 3,
+
+	"!=": 4,
+	"==": 4,
+	"<": 4,
+	">": 4,
+	"<=": 4,
+	">=": 4,
+
+	"+": 5,
+	"-": 5,
+
+	"*": 6,
+	"/": 6,
+	"%": 6,
+
+	".": 10,
+
+	"expr_missing_op": 100,
+}
 
 def print_str(s: str) -> str:
 	assert '\n' not in s

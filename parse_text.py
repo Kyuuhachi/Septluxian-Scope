@@ -1,7 +1,7 @@
 from __future__ import annotations
 from textwrap import indent
 
-from common import binops, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
+from common import Insn, Binop, Unop, Call, Index, AExpr, Ys7Scp
 
 try:
 	from lark import Lark, Transformer as _Transformer, v_args

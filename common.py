@@ -3,31 +3,6 @@ import typing as T
 import dataclasses as dc
 from pathlib import Path
 
-binops = {
-	"|": 1,
-	"||": 1,
-	"&": 3,
-	"&&": 3,
-
-	"!=": 4,
-	"==": 4,
-	"<": 4,
-	">": 4,
-	"<=": 4,
-	">=": 4,
-
-	"+": 5,
-	"-": 5,
-
-	"*": 6,
-	"/": 6,
-	"%": 6,
-
-	".": 10,
-
-	"expr_missing_op": 100,
-}
-
 @dc.dataclass
 class Binop:
 	a: Expr
