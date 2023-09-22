@@ -1,7 +1,7 @@
 from __future__ import annotations
 from textwrap import indent
 
-from common import binops, Insn, Expr, Binop, Unop, Nilop, AExpr, Ys7Scp
+from common import binops, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
 
 def print_str(s: str) -> str:
 	assert '\n' not in s
@@ -19,8 +19,11 @@ def print_expr(e: Expr, prio: int = 1000) -> str:
 			prio2 = binops[op]
 			if op != ".": op = f" {op} "
 			r = print_expr(a, prio2) + op + print_expr(b, prio2+1)
-		case Unop(pre, a, suf): r = pre + print_expr(a, 0 if suf else 100) + suf
-		case Nilop(op): r = op
+		case Unop(op, a): r = op + print_expr(a, 101)
+		case Call(target, name, args):
+			target_s = print_expr(target, 100) + "." if target else ""
+			r = target_s + f"{name}({', '.join(print_expr(arg, 0) for arg in args)})"
+		case Index(name, arg): r = f"{name}[{print_expr(arg, 0)}]"
 		case _: raise ValueError(e)
 	return f"({r})" if prio2 < prio else r
 

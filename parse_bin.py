@@ -1,7 +1,7 @@
 from __future__ import annotations
 import read
 
-from common import InsnTable, Insn, Expr, Binop, Unop, Nilop, AExpr, Ys7Scp
+from common import InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
 
 def parse_ys7_scp(f: read.Reader, insns: InsnTable) -> Ys7Scp:
 	f.check(b"YS7_SCP")
@@ -22,49 +22,46 @@ def parse_ys7_scp(f: read.Reader, insns: InsnTable) -> Ys7Scp:
 def parse_expr(f: read.Reader) -> Expr:
 	ops = []
 	def pop() -> Expr:
-		return ops.pop() if ops else Nilop("expr_missing")
-	def unop(pre: str, suf: str):
-		a = pop()
-		ops.append(Unop(pre, a, suf))
-	def binop(op: str):
+		return ops.pop() if ops else Call(None, "expr_missing", [])
+	def binop(op: str) -> Binop:
 		b = pop()
 		a = pop()
-		ops.append(Binop(a, op, b))
+		return Binop(a, op, b)
 	while True:
 		match f.u16():
-			case 0x01: binop("!=")
-			case 0x02: unop("!", "")
-			case 0x03: binop("*")
-			case 0x04: binop("/")
-			case 0x05: binop("%")
-			case 0x06: binop("+")
-			case 0x07: binop("-")
-			case 0x09: binop(">")
-			case 0x0A: binop(">=")
-			case 0x0C: binop("<=")
-			case 0x0D: binop("<")
-			case 0x0E: binop("==")
-			case 0x10: binop("&&")
-			case 0x11: binop("&")
-			case 0x12: binop("||")
-			case 0x13: binop("|")
+			case 0x01: ops.append(binop("!="))
+			case 0x02: ops.append(Unop("!", pop()))
+			case 0x03: ops.append(binop("*"))
+			case 0x04: ops.append(binop("/"))
+			case 0x05: ops.append(binop("%"))
+			case 0x06: ops.append(binop("+"))
+			case 0x07: ops.append(binop("-"))
+			case 0x09: ops.append(binop(">"))
+			case 0x0A: ops.append(binop(">="))
+			case 0x0C: ops.append(binop("<="))
+			case 0x0D: ops.append(binop("<"))
+			case 0x0E: ops.append(binop("=="))
+			case 0x10: ops.append(binop("&&"))
+			case 0x11: ops.append(binop("&"))
+			case 0x12: ops.append(binop("||"))
+			case 0x13: ops.append(binop("|"))
 			case 0x1A: ops.append(f.i32())
 			case 0x1B: ops.append(f.f32())
 			case 0x1D: break
-			case 0x1F: unop("FLAG[", "]")
-			case 0x20: unop("WORK[", "]")
-			case 0x21: unop("CHRWORK[", "]")
-			case 0x22: unop("ITEMWORK[", "]")
-			case 0x23: unop("ALLITEMWORK[", "]")
-			case 0x29: ops.append(Nilop("rand()"))
+			case 0x1F: ops.append(Index("FLAG", pop()))
+			case 0x20: ops.append(Index("WORK", pop()))
+			case 0x21: ops.append(Index("CHRWORK", pop()))
+			case 0x22: ops.append(Index("ITEMWORK", pop()))
+			case 0x23: ops.append(Index("ALLITEMWORK", pop()))
+			case 0x29: ops.append(Call(None, "rand", []))
 			case 0x2C: ops.append(f[f.u32()].decode("cp932"))
-			case 0x2D: binop(".")
-			case 0x35: unop("IsPartyIn(", ")")
-			case 0x3D: unop("IsMagicItem(", ")")
-			case 0x42: unop("-(", ")")
-			case 0x47: unop("", ".IsTurning()")
-			case 0x48: unop("GOTITEMWORK[", "]")
-			case op: ops.append(Nilop(f"expr_{op:X}"))
+			case 0x2D: ops.append(binop("."))
+			case 0x35: ops.append(Call(None, "IsPartyIn", [pop()]))
+			case 0x3D: ops.append(Call(None, "IsMagicItem", [pop()]))
+			case 0x42: ops.append(Unop("-", pop()))
+			case 0x47: ops.append(Call(pop(), "IsTurning", []))
+			case 0x48: ops.append(Index("GOTITEMWORK", pop()))
+			case op: raise ValueError(hex(op))
 	assert not f.remaining
 	while len(ops) > 1:
 		binop("expr_missing_op")

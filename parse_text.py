@@ -1,7 +1,7 @@
 from __future__ import annotations
 from textwrap import indent
 
-from common import binops, Insn, Expr, Binop, Unop, Nilop, AExpr, Ys7Scp
+from common import binops, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
 
 try:
 	from lark import Lark, Transformer as _Transformer, v_args
@@ -13,7 +13,6 @@ except ImportError:
 
 @v_args(inline=True)
 class Transformer(_Transformer):
-	WORD = str
 	def str(self, v):
 		return v[1:-1].replace('""', '"')
 
@@ -27,43 +26,22 @@ class Transformer(_Transformer):
 		(version, hash) = header
 		return Ys7Scp(version, hash, dict(functions))
 
-	def header(self, version, hash):
-		return (int(version), bytes.fromhex(hash))
+	header = lambda _, version, hash: (int(version), bytes.fromhex(hash))
+	function = lambda _, name, block: (name, block)
 
-	def function(self, name, block):
-		return (str(name), block)
-
-	block = args = text = v_args(inline = False)(list)
+	block = args = text = lambda self, *args: list(args)
 
 	stmt = Insn
 
 	expr = AExpr
+	binop = lambda _, a, op, b: Binop(a, op.value, b)
+	unop = lambda _, op, a: Unop(op.value, a)
 
-	def binop(self, a, op, b):
-		return Binop(a, str(op), b)
-	def prefixop(self, pre, a):
-		if pre == "-":
-			return Unop("-(", a, ")")
-		else:
-			return Unop(str(pre), a, "")
-	def index(self, name, expr):
-		return Unop(name + "[", expr, "]")
-	def index_on(self, target, name, expr):
-		return Binop(target, ".", Unop(name + "[", expr, "]"))
+	index = lambda _, name, expr: Index(name.value, expr)
+	index_on = lambda _, target, name, expr: Binop(target, ".", Index(name.value, expr))
 
-	def call(self, name, args):
-		match name, args:
-			case "rand", []: return Nilop("rand()")
-			case "IsPartyIn", [a]: return Unop("IsPartyIn(", a, ")")
-			case "IsMagicItem", [a]: return Unop("IsMagicItem(", a, ")")
-			case _: raise ValueError(name, args)
-	def call_on(self, target, name, args):
-		match name, args:
-			case "IsTurning", []: return Unop("", target, ".IsTurning()")
-			case _: raise ValueError(target, name, args)
-
-	def expr_missing(self):
-		return Nilop("expr_missing")
+	call = lambda _, name, args: Call(None, name.value, args)
+	call_on = lambda _, target, name, args: Call(target, name.value, args)
 
 	def __default__(self, name, tokens, meta):
 		if name.startswith("__"):

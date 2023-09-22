@@ -36,15 +36,21 @@ class Binop:
 
 @dc.dataclass
 class Unop:
-	pre: str
+	op: str
 	a: Expr
-	suf: str
 
 @dc.dataclass
-class Nilop:
-	op: str
+class Call:
+	target: Expr | None
+	name: str
+	args: list[Expr]
 
-Expr: T.TypeAlias = int | str | float | Binop | Unop | Nilop
+@dc.dataclass
+class Index:
+	name: str
+	body: Expr
+
+Expr: T.TypeAlias = int | str | float | Binop | Unop | Call | Index
 
 @dc.dataclass
 class Insn:
