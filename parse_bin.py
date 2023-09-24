@@ -116,94 +116,75 @@ def parse_insn(f: read.Reader, insns: InsnTable) -> Insn:
 				break
 	return Insn(name, args)
 
-binop = {
-	0x01: "!=",
-	0x03: "*",
-	0x04: "/",
-	0x05: "%",
-	0x06: "+",
-	0x07: "-",
-	0x09: ">=",
-	0x0A: ">",
-	0x0C: "<=",
-	0x0D: "<",
-	0x0E: "==",
-	0x10: "&&",
-	0x11: "&",
-	0x12: "||",
-	0x13: "|",
-	0x2D: ".",
-}
-
-unop = {
-	0x02: "!",
-	0x42: "-",
-}
-
-index = {
-	0x1F: "FLAG",
-	0x20: "WORK",
-	0x21: "CHRWORK",
-	0x22: "ITEMWORK",
-	0x23: "ALLITEMWORK",
-	0x48: "GOTITEMWORK",
-}
-
-func = {
-	0x29: "rand",
-	0x35: "IsPartyIn",
-	0x3D: "IsMagicItem",
-	0x47: "IsTurning",
+expr = {
+	0x01: ('binop', "!="),
+	0x02: ('unop',  "!"),
+	0x03: ('binop', "*"),
+	0x04: ('binop', "/"),
+	0x05: ('binop', "%"),
+	0x06: ('binop', "+"),
+	0x07: ('binop', "-"),
+	0x09: ('binop', ">="),
+	0x0A: ('binop', ">"),
+	0x0C: ('binop', "<="),
+	0x0D: ('binop', "<"),
+	0x0E: ('binop', "=="),
+	0x10: ('binop', "&&"),
+	0x11: ('binop', "&"),
+	0x12: ('binop', "||"),
+	0x13: ('binop', "|"),
+	0x1A: 'int',
+	0x1B: 'float',
+	0x1D: 'break',
+	0x1F: ('index', "FLAG"),
+	0x20: ('index', "WORK"),
+	0x21: ('index', "CHRWORK"),
+	0x22: ('index', "ITEMWORK"),
+	0x23: ('index', "ALLITEMWORK"),
+	0x29: ('func', "rand", 0),
+	0x2C: 'chr',
+	0x2D: ('binop', "."),
+	0x35: ('func', "IsPartyIn", 1),
+	0x3D: ('func', "IsMagicItem", 1),
+	0x42: ('unop', "-"),
+	0x47: ('func', "IsTurning", 1),
+	0x48: ('index', "GOTITEMWORK"),
 }
 
 def parse_expr(f: read.Reader) -> Expr:
 	ops = []
 	def pop() -> Expr:
 		return ops.pop() if ops else Call("expr_missing", [])
-	def binop(op: str) -> Binop:
-		b = pop()
-		a = pop()
-		return Binop(a, op, b)
 	while True:
-		match f.u16():
-			case 0x01: ops.append(binop("!="))
-			case 0x02: ops.append(Unop("!", pop()))
-			case 0x03: ops.append(binop("*"))
-			case 0x04: ops.append(binop("/"))
-			case 0x05: ops.append(binop("%"))
-			case 0x06: ops.append(binop("+"))
-			case 0x07: ops.append(binop("-"))
-			case 0x09: ops.append(binop(">="))
-			case 0x0A: ops.append(binop(">"))
-			case 0x0C: ops.append(binop("<="))
-			case 0x0D: ops.append(binop("<"))
-			case 0x0E: ops.append(binop("=="))
-			case 0x10: ops.append(binop("&&"))
-			case 0x11: ops.append(binop("&"))
-			case 0x12: ops.append(binop("||"))
-			case 0x13: ops.append(binop("|"))
-			case 0x1A: ops.append(f.i32())
-			case 0x1B: ops.append(f.f32())
-			case 0x1D: break
-			case 0x1F: ops.append(Index("FLAG", pop()))
-			case 0x20: ops.append(Index("WORK", pop()))
-			case 0x21: ops.append(Index("CHRWORK", pop()))
-			case 0x22: ops.append(Index("ITEMWORK", pop()))
-			case 0x23: ops.append(Index("ALLITEMWORK", pop()))
-			case 0x29: ops.append(Call("rand", []))
-			case 0x2C: ops.append(f[f.u32()].decode("cp932"))
-			case 0x2D: ops.append(binop("."))
-			case 0x35: ops.append(Call("IsPartyIn", [pop()]))
-			case 0x3D: ops.append(Call("IsMagicItem", [pop()]))
-			case 0x42: ops.append(Unop("-", pop()))
-			case 0x47: ops.append(Call("IsTurning", [pop()]))
-			case 0x48: ops.append(Index("GOTITEMWORK", pop()))
-			case op: raise ValueError(hex(op))
+		opcode = f.u16()
+		match expr.get(opcode):
+			case "break":
+				break
+			case "int":
+				ops.append(f.i32())
+			case "float":
+				ops.append(f.f32())
+			case "chr":
+				ops.append(f[f.u32()].decode("cp932"))
+			case "unop", op:
+				a = pop()
+				ops.append(Unop(op, a))
+			case "binop", op:
+				b = pop()
+				a = pop()
+				ops.append(Binop(a, op, b))
+			case "index", name:
+				a = pop()
+				ops.append(Index(name, a))
+			case "func", name, n:
+				args = [pop() for _ in range(n)][::-1]
+				ops.append(Call(name, args))
+			case desc:
+				raise ValueError(hex(opcode), desc)
 	assert not f.remaining
 	while len(ops) > 1:
 		return Call("expr_missing", ops)
 	return pop()
-
 
 def fix_break(code: list[Insn], end: int):
 	for i in code:

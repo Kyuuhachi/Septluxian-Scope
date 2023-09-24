@@ -138,15 +138,12 @@ def write_insn(insn: Insn, insns: RevInsnTable) -> bytes:
 
 	return f.data
 
-binop = { v: k for k, v in parse_bin.binop.items() }
-unop  = { v: k for k, v in parse_bin.unop.items() }
-index = { v: k for k, v in parse_bin.index.items() }
-func  = { v: k for k, v in parse_bin.func.items() }
+expr = { v: k for k, v in parse_bin.expr.items() }
 
-def write_expr(expr: Expr) -> bytes:
+def write_expr(e: Expr) -> bytes:
 	f = Writer()
-	def w(expr: Expr):
-		match expr:
+	def w(e: Expr):
+		match e:
 			case int(v):
 				f.u16(0x1A)
 				f.i32(v)
@@ -164,26 +161,26 @@ def write_expr(expr: Expr) -> bytes:
 			case Binop(a, op, b):
 				w(a)
 				w(b)
-				f.u16(binop[op])
+				f.u16(expr["binop", op])
 
 			case Unop(op, a):
 				w(a)
-				f.u16(unop[op])
+				f.u16(expr["unop", op])
 
 			case Index(name, e):
 				w(e)
-				f.u16(index[name])
+				f.u16(expr["index", name])
 
 			case Call(name, args):
 				for arg in args:
 					w(arg)
 
 				if name != "expr_missing":
-					f.u16(func[name])
+					f.u16(expr["func", name, len(args)])
 
 			case _:
-				raise ValueError(expr)
-	w(expr)
+				raise ValueError(e)
+	w(e)
 	f.u16(0x1D)
 	return f.data
 
