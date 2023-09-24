@@ -123,8 +123,8 @@ binop = {
 	0x05: "%",
 	0x06: "+",
 	0x07: "-",
-	0x09: ">",
-	0x0A: ">=",
+	0x09: ">=",
+	0x0A: ">",
 	0x0C: "<=",
 	0x0D: "<",
 	0x0E: "==",
@@ -173,8 +173,8 @@ def parse_expr(f: read.Reader) -> Expr:
 			case 0x05: ops.append(binop("%"))
 			case 0x06: ops.append(binop("+"))
 			case 0x07: ops.append(binop("-"))
-			case 0x09: ops.append(binop(">"))
-			case 0x0A: ops.append(binop(">="))
+			case 0x09: ops.append(binop(">="))
+			case 0x0A: ops.append(binop(">"))
 			case 0x0C: ops.append(binop("<="))
 			case 0x0D: ops.append(binop("<"))
 			case 0x0E: ops.append(binop("=="))
