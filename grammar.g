@@ -22,15 +22,15 @@ csep_term: (term ",")* term? -> args
 ?expr3: expr3 /[!=]=|[<>]=?/    expr4 -> binop | expr4
 ?expr4: expr4 /[+-]/            expr5 -> binop | expr5
 ?expr5: expr5 /[*\/%]/          expr6 -> binop | expr6
-?expr6: /[!-]/ expr6 -> unop | expr7
+?expr6: /[!-]/ expr6 -> unop
+      | str /[.]/ expr6 -> binop
+      | expr7
 ?expr7: expr_atom
 
 ?expr_atom: number | str
           | "(" expr ")"
           | WORD "[" expr "]" -> index
           | WORD "(" csep_expr ")" -> call
-          | expr_atom "." WORD "[" expr "]" -> index_on
-          | expr_atom "." WORD "(" csep_expr ")" -> call_on
 
 csep_expr: (expr ",")* expr? -> args
 

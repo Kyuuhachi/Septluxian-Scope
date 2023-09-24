@@ -174,9 +174,7 @@ def write_expr(expr: Expr) -> bytes:
 				w(e)
 				f.u16(index[name])
 
-			case Call(target, name, args):
-				if target is not None:
-					w(target)
+			case Call(name, args):
 				for arg in args:
 					w(arg)
 

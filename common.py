@@ -16,7 +16,6 @@ class Unop:
 
 @dc.dataclass
 class Call:
-	target: Expr | None
 	name: str
 	args: list[Expr]
 

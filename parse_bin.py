@@ -159,7 +159,7 @@ func = {
 def parse_expr(f: read.Reader) -> Expr:
 	ops = []
 	def pop() -> Expr:
-		return ops.pop() if ops else Call(None, "expr_missing", [])
+		return ops.pop() if ops else Call("expr_missing", [])
 	def binop(op: str) -> Binop:
 		b = pop()
 		a = pop()
@@ -190,18 +190,18 @@ def parse_expr(f: read.Reader) -> Expr:
 			case 0x21: ops.append(Index("CHRWORK", pop()))
 			case 0x22: ops.append(Index("ITEMWORK", pop()))
 			case 0x23: ops.append(Index("ALLITEMWORK", pop()))
-			case 0x29: ops.append(Call(None, "rand", []))
+			case 0x29: ops.append(Call("rand", []))
 			case 0x2C: ops.append(f[f.u32()].decode("cp932"))
 			case 0x2D: ops.append(binop("."))
-			case 0x35: ops.append(Call(None, "IsPartyIn", [pop()]))
-			case 0x3D: ops.append(Call(None, "IsMagicItem", [pop()]))
+			case 0x35: ops.append(Call("IsPartyIn", [pop()]))
+			case 0x3D: ops.append(Call("IsMagicItem", [pop()]))
 			case 0x42: ops.append(Unop("-", pop()))
-			case 0x47: ops.append(Call(pop(), "IsTurning", []))
+			case 0x47: ops.append(Call("IsTurning", [pop()]))
 			case 0x48: ops.append(Index("GOTITEMWORK", pop()))
 			case op: raise ValueError(hex(op))
 	assert not f.remaining
 	while len(ops) > 1:
-		return Call(None, "expr_missing", ops)
+		return Call("expr_missing", ops)
 	return pop()
 
 

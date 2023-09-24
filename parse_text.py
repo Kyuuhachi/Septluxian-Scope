@@ -39,12 +39,8 @@ class Parser(Transformer):
 	expr = AExpr
 	binop = lambda _, a, op, b: Binop(a, op.value, b)
 	unop = lambda _, op, a: Unop(op.value, a)
-
 	index = lambda _, name, expr: Index(name.value, expr)
-	index_on = lambda _, target, name, expr: Binop(target, ".", Index(name.value, expr))
-
-	call = lambda _, name, args: Call(None, name.value, args)
-	call_on = lambda _, target, name, args: Call(target, name.value, args)
+	call = lambda _, name, args: Call(name.value, args)
 
 	def __default__(self, name, tokens, meta):
 		if name.startswith("__"):

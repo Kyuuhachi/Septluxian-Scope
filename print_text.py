@@ -45,9 +45,7 @@ def print_expr(e: Expr, prio: int = 1000) -> str:
 			if op != ".": op = f" {op} "
 			r = print_expr(a, prio2) + op + print_expr(b, prio2+1)
 		case Unop(op, a): r = op + print_expr(a, 101)
-		case Call(target, name, args):
-			target_s = print_expr(target, 100) + "." if target else ""
-			r = target_s + f"{name}({', '.join(print_expr(arg, 0) for arg in args)})"
+		case Call(name, args): r = f"{name}({', '.join(print_expr(arg, 0) for arg in args)})"
 		case Index(name, arg): r = f"{name}[{print_expr(arg, 0)}]"
 		case _: raise ValueError(e)
 	return f"({r})" if prio2 < prio else r
