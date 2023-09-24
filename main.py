@@ -1,4 +1,5 @@
 #!/bin/env python3
+import typing as T
 from sys import stderr
 import argparse
 from pathlib import Path
@@ -11,20 +12,27 @@ argp.add_argument("-o", "--output", help="file or directory to place files in", 
 argp.add_argument("files", metavar="file", nargs="+", help="files to convert", type = Path)
 
 def __main__(insn: Path | None, output: Path | None, files: list[Path]):
-	if len(files) != 1 and output and not output.is_dir():
-		output.mkdir(parents=True)
+	make_output: T.Callable[[Path, str], Path]
+	if output is None:
+		make_output = lambda path, suffix: path.with_suffix(suffix)
+	elif len(files) == 1 and not output.is_dir():
+		make_output = lambda path, suffix: output
+	else:
+		output.mkdir(parents=True, exist_ok=True)
+		make_output = lambda path, suffix: output / path.with_suffix(suffix).name
+
 	insns = insn_table(insn) if insn is not None else None
 
 	for file in files:
 		print(f"{file} → ", file=stderr, end="", flush=True)
 		if file.suffix == ".bin":
-			outfile = (output or file.parent)/file.with_suffix(".scp").name
+			outfile = make_output(file, ".scp")
 			data = file.read_bytes()
 			scp = parse_bin.parse_ys7_scp(data, insns)
 			src = print_text.print_ys7_scp(scp)
 			outfile.write_text(src)
 		elif file.suffix == ".scp":
-			outfile = (output or file.parent)/file.with_suffix(".bin").name
+			outfile = make_output(file, ".bin")
 			src = file.read_text()
 			scp = parse_text.parse_ys7_scp(src)
 			data = print_bin.write_ys7_scp(scp, insns)
