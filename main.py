@@ -16,24 +16,23 @@ def __main__(insn: Path | None, output: Path | None, files: list[Path]):
 	insns = insn_table(insn) if insn is not None else None
 
 	for file in files:
+		print(f"{file} → ", file=stderr, end="", flush=True)
 		if file.suffix == ".bin":
-			print(f"{file} → ", file=stderr, end="", flush=True)
 			outfile = (output or file.parent)/file.with_suffix(".scp").name
 			data = file.read_bytes()
 			scp = parse_bin.parse_ys7_scp(data, insns)
 			src = print_text.print_ys7_scp(scp)
 			outfile.write_text(src)
-			print(f"{outfile}", file=stderr)
 		elif file.suffix == ".scp":
-			print(f"{file} → ", file=stderr, end="", flush=True)
 			outfile = (output or file.parent)/file.with_suffix(".bin").name
 			src = file.read_text()
 			scp = parse_text.parse_ys7_scp(src)
 			data = print_bin.write_ys7_scp(scp, insns)
 			outfile.write_bytes(data)
-			print(f"{outfile}", file=stderr)
 		else:
-			print(f"Not sure how to handle {file}", file=stderr)
+			print(f"not sure how to handle", file=stderr)
+			continue
+		print(f"{outfile}", file=stderr)
 
 if __name__ == "__main__":
 	__main__(**argp.parse_args().__dict__)
