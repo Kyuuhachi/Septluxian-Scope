@@ -29,17 +29,23 @@ def __main__(quiet: bool, insn: Path | None, output: Path | None, files: list[Pa
 		if not quiet: print(f"{file} → ", file=stderr, end="", flush=True)
 		data = file.read_bytes()
 		if file.suffix == ".bin":
-			outfile = make_output(file, ".scp")
+			outfile = make_output(file, ".7l")
 			scp = parse_bin.parse_ys7_scp(data, insns)
 			src = print_text.print_ys7_scp(scp)
 			outdata = src.encode()
-		elif file.suffix == ".scp":
+		elif file.suffix == ".7l":
 			outfile = make_output(file, ".bin")
 			src = data.decode()
 			scp = parse_text.parse_ys7_scp(src)
 			outdata = print_bin.write_ys7_scp(scp, insns)
+		elif file.suffix == ".scp":
+			if not quiet:
+				print(f"cannot handle .scp source files", file=stderr)
+			failed = True
+			continue
 		else:
-			if not quiet: print(f"not sure how to handle", file=stderr)
+			if not quiet:
+				print(f"not sure how to handle", file=stderr)
 			failed = True
 			continue
 		if not quiet: print(f"{outfile}", file=stderr)
