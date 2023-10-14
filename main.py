@@ -27,17 +27,18 @@ def __main__(quiet: bool, insn: Path | None, output: Path | None, files: list[Pa
 	failed = False
 	for file in files:
 		if not quiet: print(f"{file} → ", file=stderr, end="", flush=True)
-		data = file.read_bytes()
 		if file.suffix == ".bin":
 			outfile = make_output(file, ".7l")
+			data = file.read_bytes()
 			scp = parse_bin.parse_ys7_scp(data, insns)
 			src = print_text.print_ys7_scp(scp)
-			outdata = src.encode()
+			outfile.write_bytes(src.encode())
 		elif file.suffix == ".7l":
 			outfile = make_output(file, ".bin")
-			src = data.decode()
+			src = file.read_bytes().decode()
 			scp = parse_text.parse_ys7_scp(src)
 			outdata = print_bin.write_ys7_scp(scp, insns)
+			outfile.write_bytes(outdata)
 		elif file.suffix == ".scp":
 			if not quiet:
 				print(f"cannot handle .scp source files", file=stderr)
@@ -49,7 +50,6 @@ def __main__(quiet: bool, insn: Path | None, output: Path | None, files: list[Pa
 			failed = True
 			continue
 		if not quiet: print(f"{outfile}", file=stderr)
-		outfile.write_bytes(outdata)
 	return 0 if not failed else 2
 
 if __name__ == "__main__":
