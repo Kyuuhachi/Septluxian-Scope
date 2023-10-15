@@ -2,6 +2,7 @@
 import typing as T
 from sys import stderr, exit
 import argparse
+import csv
 from pathlib import Path
 from common import InsnTable, insn_table
 import parse_bin, print_text, parse_text, print_bin
@@ -37,19 +38,42 @@ def __main__(quiet: bool, insn: Path | None, output: Path | None, files: list[Pa
 
 def process_file(make_output: T.Callable[[Path, str], Path], insns: InsnTable | None, file: Path) -> Path:
 	if file.suffix == ".bin":
-		outfile = make_output(file, ".7l")
 		data = file.read_bytes()
 		scp = parse_bin.parse_ys7_scp(data, insns)
 		src = print_text.print_ys7_scp(scp)
+		outfile = make_output(file, ".7l")
 		outfile.write_bytes(src.encode())
 	elif file.suffix == ".7l":
-		outfile = make_output(file, ".bin")
 		src = file.read_bytes().decode()
 		scp = parse_text.parse_ys7_scp(src)
 		outdata = print_bin.write_ys7_scp(scp, insns)
+		outfile = make_output(file, ".bin")
 		outfile.write_bytes(outdata)
 	elif file.suffix == ".scp":
-		raise Exception("cannot handle .scp source files")
+		try:
+			lines = file.read_bytes().decode().split('\0')
+			match lines.pop():
+				case "\t": pass
+				case "\t\r\n": lines.extend(["", ""])
+				case _: raise Exception
+			assert not len(lines) % 2
+		except Exception:
+			raise Exception("invalid .scp file — is it a script source?")
+		outfile = make_output(file, ".csv")
+		with outfile.open("w", newline="") as f:
+			csv.writer(f).writerows(zip(lines[0::2], lines[1::2]))
+	elif file.suffix == ".csv":
+		strings = []
+		with file.open() as f:
+			for row in csv.reader(f):
+				assert len(row) == 2, f"invalid row {row}"
+				strings.extend(row)
+		if strings[-2:] == ["", ""]:
+			strings[-2:] = ["\t\r\n"]
+		else:
+			strings.append("\t")
+		outfile = make_output(file, ".scp")
+		outfile.write_bytes("\0".join(strings).encode())
 	else:
 		raise Exception(f"not sure how to handle")
 	return outfile
