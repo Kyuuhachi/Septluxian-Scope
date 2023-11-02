@@ -30,7 +30,10 @@ def __main__(quiet: bool, insn: Path | None, output: Path | None, files: list[Pa
 		try:
 			outfile = process_file(make_output, insns, file)
 		except Exception as e:
-			if not quiet: print(e, file=stderr)
+			if not quiet:
+				import traceback
+				traceback.print_exc()
+				print(e, file=stderr)
 			failed = True
 		else:
 			if not quiet: print(f"{outfile}", file=stderr)
