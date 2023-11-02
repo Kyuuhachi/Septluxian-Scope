@@ -1,6 +1,7 @@
 #!/bin/env python3
 import typing as T
 from sys import stderr, exit
+import os
 import argparse
 import csv
 from pathlib import Path
@@ -37,6 +38,8 @@ def __main__(quiet: bool, insn: Path | None, output: Path | None, files: list[Pa
 			failed = True
 		else:
 			if not quiet: print(f"{outfile}", file=stderr)
+	if failed and os.name == "nt":
+		os.system("pause")
 	return 0 if not failed else 2
 
 def process_file(make_output: T.Callable[[Path, str], Path], insns: InsnTable | None, file: Path) -> Path:
