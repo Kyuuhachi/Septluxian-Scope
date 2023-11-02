@@ -11,7 +11,7 @@ except ImportError:
 	# Generate with
 	#   python -m lark.tools.standalone --maybe_placeholders grammar.g -o grammar.py
 	# Unfortunately PYTHONHASHSEED doesn't work
-	parser = Lark_StandAlone(parser="lalr")
+	parser = Lark_StandAlone()
 	assert parser.options.maybe_placeholders, "grammar not compliled correctly"
 
 @v_args(inline=True)
