@@ -66,11 +66,11 @@ def process_file(make_output: T.Callable[[Path, str], Path], insns: InsnTable | 
 		except Exception:
 			raise Exception("invalid .scp file — is it a script source?")
 		outfile = make_output(file, ".csv")
-		with outfile.open("w", newline="") as f:
+		with outfile.open("w", encoding="utf8", newline="") as f:
 			csv.writer(f).writerows(zip(lines[0::2], lines[1::2]))
 	elif file.suffix == ".csv":
 		strings = []
-		with file.open() as f:
+		with file.open(encoding="utf8") as f:
 			for row in csv.reader(f):
 				assert len(row) == 2, f"invalid row {row}"
 				strings.extend(row)
