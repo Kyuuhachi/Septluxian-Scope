@@ -48,16 +48,16 @@ def process_file(make_output: T.Callable[[Path, str], Path], insns: InsnTable | 
 		scp = parse_bin.parse_ys7_scp(data, insns)
 		src = print_text.print_ys7_scp(scp)
 		outfile = make_output(file, ".7l")
-		outfile.write_bytes(src.encode())
+		outfile.write_bytes(src.encode("utf8"))
 	elif file.suffix == ".7l":
-		src = file.read_bytes().decode()
+		src = file.read_bytes().decode("utf8")
 		scp = parse_text.parse_ys7_scp(src)
 		outdata = print_bin.write_ys7_scp(scp, insns)
 		outfile = make_output(file, ".bin")
 		outfile.write_bytes(outdata)
 	elif file.suffix == ".scp":
 		try:
-			lines = file.read_bytes().decode().split('\0')
+			lines = file.read_bytes().decode("utf8").split('\0')
 			match lines.pop():
 				case "\t": pass
 				case "\t\r\n": lines.extend(["", ""])
@@ -79,7 +79,7 @@ def process_file(make_output: T.Callable[[Path, str], Path], insns: InsnTable | 
 		else:
 			strings.append("\t")
 		outfile = make_output(file, ".scp")
-		outfile.write_bytes("\0".join(strings).encode())
+		outfile.write_bytes("\0".join(strings).encode("utf8"))
 	else:
 		raise Exception(f"not sure how to handle")
 	return outfile
