@@ -5,16 +5,16 @@ import os
 import argparse
 import csv
 from pathlib import Path
-from common import InsnTable, insn_table
+from common import InsnTable, insn_table, named_tables
 import parse_bin, print_text, parse_text, print_bin
 
 argp = argparse.ArgumentParser()
 argp.add_argument("-q", "--quiet", help="don't write status messages", action = "store_true")
-argp.add_argument("-i", "--insn", help="path to instruction table", type = Path)
+argp.add_argument("-i", "--insn", help="path to instruction table")
 argp.add_argument("-o", "--output", help="file or directory to place files in", type = Path)
 argp.add_argument("files", metavar="file", nargs="+", help="files to convert", type = Path)
 
-def __main__(quiet: bool, insn: Path | None, output: Path | None, files: list[Path]) -> int:
+def __main__(quiet: bool, insn: str | None, output: Path | None, files: list[Path]) -> int:
 	if output is None:
 		make_output = lambda path, suffix: path.with_suffix(suffix)
 	elif len(files) == 1 and not output.is_dir():
@@ -23,7 +23,12 @@ def __main__(quiet: bool, insn: Path | None, output: Path | None, files: list[Pa
 		output.mkdir(parents=True, exist_ok=True)
 		make_output = lambda path, suffix: output / path.with_suffix(suffix).name
 
-	insns = insn_table(insn) if insn is not None else None
+	if insn is None:
+		insns = None
+	elif a := named_tables.get(insn):
+		insns = a
+	else:
+		insns = insn_table(insn)
 
 	failed = False
 	for file in files:
