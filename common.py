@@ -58,10 +58,12 @@ def insn_table(path: str|Path) -> InsnTable:
 	return insns
 
 NAYUTA = insn_table(Path(__file__).parent / "insn/nayuta.txt")
+YS7 = insn_table(Path(__file__).parent / "insn/ys7.txt")
 YS8 = insn_table(Path(__file__).parent / "insn/ys8.txt")
 
 named_tables = {
 	"nayuta": NAYUTA,
+	"ys7": YS7,
 	"ys8": YS8,
 }
 
