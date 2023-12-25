@@ -38,6 +38,12 @@ class Reader:
 		self.pos += 1
 		return v
 
+	def zstr(self) -> bytes:
+		l = self.data[self.pos:].find(0)
+		s = self.data[self.pos:self.pos+l]
+		self.pos += l + 1
+		return s
+
 	@property
 	def remaining(self) -> int:
 		return len(self.data) - self.pos
@@ -112,3 +118,35 @@ def dump(data: bytes, width: int = 48) -> str:
 		text = escape.sub(lambda a: "\x1B[2m" + "·"*len(a.group()) + "\x1B[m", text)
 		s += "▏" + text + "\n"
 	return s
+
+@dc.dataclass(repr=False)
+class Writer:
+	data: bytearray = dc.field(default_factory=bytearray)
+
+	def __repr__(self) -> str:
+		return f"{type(self).__name__}({len(self)})"
+	__str__ = __repr__
+
+	def __len__(self) -> int:
+		return len(self.data)
+
+	def write(self, data: bytes):
+		self.data.extend(data)
+
+	def pack(self, spec: str, *args: T.Any):
+		self.write(struct.pack(spec, *args))
+
+	def u8 (self, v: int): self.pack("B", v)
+	def u16(self, v: int): self.pack("H", v)
+	def u32(self, v: int): self.pack("I", v)
+	def u64(self, v: int): self.pack("Q", v)
+
+	def i8 (self, v: int): self.pack("b", v)
+	def i16(self, v: int): self.pack("h", v)
+	def i32(self, v: int): self.pack("i", v)
+	def i64(self, v: int): self.pack("q", v)
+
+	def f32(self, v: float): self.pack("f", v)
+	def f64(self, v: float): self.pack("d", v)
+
+	def pad(self, n: int): self.write(bytes(-len(self) % n))

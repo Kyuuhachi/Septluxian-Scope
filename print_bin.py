@@ -5,6 +5,7 @@ import dataclasses as dc
 import struct
 
 from common import insn_tables, InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
+from read import Writer
 import parse_bin
 
 RevInsnTable: T.TypeAlias = dict[str, int]
@@ -204,33 +205,3 @@ def insert_tail(code: list[Insn], tail: str | None):
 	for insn in code:
 		if insn.body is not None:
 			insert_tail(insn.body, parse_bin.tails.get(insn.name))
-
-@dc.dataclass(repr=False)
-class Writer:
-	data: bytearray = dc.field(default_factory=bytearray)
-
-	def __repr__(self) -> str:
-		return f"{type(self).__name__}({len(self)})"
-	__str__ = __repr__
-
-	def __len__(self) -> int:
-		return len(self.data)
-
-	def write(self, data: bytes):
-		self.data.extend(data)
-
-	def pack(self, spec: str, *args: T.Any):
-		self.write(struct.pack(spec, *args))
-
-	def u8 (self, v: int): return self.pack("B", v)
-	def u16(self, v: int): return self.pack("H", v)
-	def u32(self, v: int): return self.pack("I", v)
-	def u64(self, v: int): return self.pack("Q", v)
-
-	def i8 (self, v: int): return self.pack("b", v)
-	def i16(self, v: int): return self.pack("h", v)
-	def i32(self, v: int): return self.pack("i", v)
-	def i64(self, v: int): return self.pack("q", v)
-
-	def f32(self, v: float): return self.pack("f", v)
-	def f64(self, v: float): return self.pack("d", v)

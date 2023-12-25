@@ -7,6 +7,7 @@ import csv
 from pathlib import Path
 from common import InsnTable, insn_table, named_tables
 import parse_bin, print_text, parse_text, print_bin
+import dbin
 
 argp = argparse.ArgumentParser()
 argp.add_argument("-q", "--quiet", help="don't write status messages", action = "store_true")
@@ -85,6 +86,16 @@ def process_file(make_output: T.Callable[[Path, str], Path], insns: InsnTable | 
 			strings.append("\t")
 		outfile = make_output(file, ".scp")
 		outfile.write_bytes("\0".join(strings).encode("utf8"))
+	elif file.suffix == ".dbin":
+		data = file.read_bytes()
+		outdata = dbin.parse_dbin(data)
+		outfile = make_output(file, ".dbin.json")
+		outfile.write_bytes(outdata.encode("utf8"))
+	elif file.name.endswith(".dbin.json"):
+		data = file.read_bytes().decode("utf8")
+		outdata = dbin.parse_json(data)
+		outfile = make_output(file.with_suffix(""), ".dbin")
+		outfile.write_bytes(outdata)
 	else:
 		raise Exception(f"not sure how to handle")
 	return outfile

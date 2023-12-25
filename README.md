@@ -6,9 +6,10 @@ A decompiler for games using the YS7_SCP format, specifically *Ys Seven*, *Ys 8:
 To use, ensure Python (3.10 or above) is installed, then drag a `.bin` file onto `main.py`.
 Edit the resulting `.7l` file, then drag it back onto `main.py` to recompile.
 
-It also supports the *Ys 8*'s `script/{en,fr,ja}/*.scp` files, used for translating the game.
-These are translated to/from `.csv` files in an identical manner.
-Do not confuse them with `script/*.scp`, however, which are uncompiled source code for the `.bin` scripts.
+In addition, the translation files for *Ys 7* and *8* are supported.
+For *Ys 7*, these are in `lang/*/text/*.dbin`, and are translated to json files.
+For *Ys 8*, they are in `script/{en,fr,ja}/*.scp`, and are converted to csv.
+Do not confuse these with `script/*.scp`, however, which are source code for the `.bin` scripts.
 
 ## Supported games
 
