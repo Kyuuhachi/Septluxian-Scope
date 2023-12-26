@@ -14,20 +14,19 @@ def parse_ys7_scp(data: bytes, insns: InsnTable | None = None) -> Ys7Scp:
 	if insns is None:
 		insns = insn_tables.get(version, {})
 
-	datastart0 = f.pos + 40 * nfuncs
-	datastart = datastart0
-
-	functions = []
+	functbl = []
 	for _ in range(nfuncs):
 		name = f[32].rstrip(b"\0").decode("cp932")
 		length = f.u32()
 		start = f.u32()
-		assert start == datastart
-		functions.append((name, parse_func(f.at(start)[length], insns, version)))
-		datastart += length
+		functbl.append((name, start, length))
 
-	assert f.pos == datastart0
-	assert datastart == len(data)
+	ends = [start for _, start, _ in functbl[1:]] + [len(data)]
+	functions = []
+	for (name, start, length), end in zip(functbl, ends):
+		if start+length != end:
+			print(f"{name}: incorrect length {length}, should be {end - start}")
+		functions.append((name, parse_func(data[start:end], insns, version)))
 
 	return Ys7Scp(version, hash, functions)
 
