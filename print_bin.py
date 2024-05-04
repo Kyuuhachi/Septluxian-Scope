@@ -41,7 +41,7 @@ def write_ys7_scp(scp: Ys7Scp, insns: InsnTable | None = None) -> bytes:
 def write_func(code: list[Insn], insns: RevInsnTable, version: int) -> bytes:
 	code = deepcopy(code)
 	insert_tail(code, "return")
-	if version == 6:
+	if version >= 6:
 		mangle_return(code)
 	data, refs = write_block(code, insns)
 	assert not refs

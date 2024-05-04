@@ -34,7 +34,7 @@ def parse_func(data: bytes, insns: InsnTable, version: int) -> list[Insn]:
 	f = read.Reader(data)
 	code = parse_block(f, len(data), insns)
 	assert not f.remaining
-	if version == 6:
+	if version >= 6:
 		restore_return(code)
 	strip_tail(code, "return")
 	return code

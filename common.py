@@ -60,16 +60,19 @@ def insn_table(path: str|Path) -> InsnTable:
 NAYUTA = insn_table(Path(__file__).parent / "insn/nayuta.txt")
 YS7 = insn_table(Path(__file__).parent / "insn/ys7.txt")
 YS8 = insn_table(Path(__file__).parent / "insn/ys8.txt")
+YS9 = insn_table(Path(__file__).parent / "insn/ys9.txt")
 
 named_tables = {
 	"nayuta": NAYUTA,
 	"ys7": YS7,
 	"ys8": YS8,
+	"ys9": YS9,
 }
 
 insn_tables = {
 	2: NAYUTA,
 	6: YS8,
+	16: YS9,
 }
 
 A = T.TypeVar("A")
