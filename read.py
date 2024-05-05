@@ -119,9 +119,18 @@ def dump(data: bytes, width: int = 48) -> str:
 		s += "▏" + text + "\n"
 	return s
 
+class Label: pass
+
 @dc.dataclass(repr=False)
 class Writer:
-	data: bytearray = dc.field(default_factory=bytearray)
+	data: bytearray
+	thunks: dict[int, tuple[int, T.Callable[[Writer], bytes]]]
+	labels: dict[Label, int]
+
+	def __init__(self, data: bytes = b""):
+		self.data = bytearray(data)
+		self.thunks = {}
+		self.labels = {}
 
 	def __repr__(self) -> str:
 		return f"{type(self).__name__}({len(self)})"
@@ -130,23 +139,55 @@ class Writer:
 	def __len__(self) -> int:
 		return len(self.data)
 
-	def write(self, data: bytes):
-		self.data.extend(data)
+	def __bytes__(self) -> bytes:
+		for pos, (n, thunk) in self.thunks.items():
+			b = thunk(self)
+			assert len(b) == n, (b, n)
+			self.data[pos:pos+n] = b
+		self.thunks.clear()
+		return bytes(self.data)
 
-	def pack(self, spec: str, *args: T.Any):
+	def write(self, v: bytes) -> None:
+		self.data += v
+
+	def __iadd__(self, v: Writer) -> Writer:
+		self.thunks.update((k + len(self.data), v) for k, v in v.thunks.items())
+		self.labels.update((k, v + len(self.data)) for k, v in v.labels.items())
+		self.data += v.data
+		return self
+
+	def __add__(self, v: Writer) -> Writer:
+		w = Writer()
+		w += self
+		w += v
+		return w
+
+	def __getitem__(self, label: Label) -> int:
+		return self.labels[label]
+
+	def place(self, label: Label) -> Label:
+		self.labels[label] = len(self)
+		return label
+
+	def pack(self, spec: str, *args: T.Any) -> None:
 		self.write(struct.pack(spec, *args))
 
-	def u8 (self, v: int): self.pack("B", v)
-	def u16(self, v: int): self.pack("H", v)
-	def u32(self, v: int): self.pack("I", v)
-	def u64(self, v: int): self.pack("Q", v)
+	def delay(self, n: int, thunk: T.Callable[[Writer], bytes]) -> None:
+		self.thunks[len(self.data)] = (n, thunk)
+		self.write(bytes(n))
 
-	def i8 (self, v: int): self.pack("b", v)
-	def i16(self, v: int): self.pack("h", v)
-	def i32(self, v: int): self.pack("i", v)
-	def i64(self, v: int): self.pack("q", v)
+	def diff(self, width: int, a: Label, b: Label) -> None:
+		self.delay(width, lambda r: int.to_bytes(r[b] - r[a], width, "little", signed = True))
 
-	def f32(self, v: float): self.pack("f", v)
-	def f64(self, v: float): self.pack("d", v)
+	def u8 (self, v: int) -> None: self.pack("B", v)
+	def u16(self, v: int) -> None: self.pack("H", v)
+	def u32(self, v: int) -> None: self.pack("I", v)
+	def u64(self, v: int) -> None: self.pack("Q", v)
 
-	def pad(self, n: int): self.write(bytes(-len(self) % n))
+	def i8 (self, v: int) -> None: self.pack("b", v)
+	def i16(self, v: int) -> None: self.pack("h", v)
+	def i32(self, v: int) -> None: self.pack("i", v)
+	def i64(self, v: int) -> None: self.pack("q", v)
+
+	def f32(self, v: float) -> None: self.pack("f", v)
+	def f64(self, v: float) -> None: self.pack("d", v)

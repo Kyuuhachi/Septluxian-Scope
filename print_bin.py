@@ -1,17 +1,20 @@
 from __future__ import annotations
 from copy import deepcopy
 import typing as T
-import dataclasses as dc
-import struct
 
-from common import insn_tables, InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
-from read import Writer
+from common import insn_tables, InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp, Arg
+from read import Writer, Label
 import parse_bin
 
 RevInsnTable: T.TypeAlias = dict[str, int]
 
 def write_ys7_scp(scp: Ys7Scp, insns: InsnTable | None = None) -> bytes:
+	if insns is None:
+		insns = insn_tables.get(scp.version, {})
+	_insns = { v: k for k, v in insns.items() }
+
 	f = Writer()
+	start = f.place(Label())
 	f.write(b"YS7_SCP")
 	f.u32(0)
 	f.u8(scp.version)
@@ -19,44 +22,32 @@ def write_ys7_scp(scp: Ys7Scp, insns: InsnTable | None = None) -> bytes:
 	f.write(scp.hash)
 	f.u32(len(scp.functions))
 
-	if insns is None:
-		insns = insn_tables.get(scp.version, {})
-
-	_insns = { v: k for k, v in insns.items() }
-
-	datastart = len(f) + 40 * len(scp.functions)
-
-	data = bytearray()
+	data = Writer()
 	for name, code in scp.functions:
 		name = name.encode("cp932").ljust(32, b"\0")
 		assert len(name) == 32
 		funcdata = write_func(code, _insns, scp.version)
 		f.write(name)
 		f.u32(len(funcdata))
-		f.u32(datastart + len(data))
-		data.extend(funcdata)
+		f.diff(4, start, data.place(Label()))
+		data.write(funcdata)
 
-	return bytes(f.data + data)
+	return bytes(f + data)
 
 def write_func(code: list[Insn], insns: RevInsnTable, version: int) -> bytes:
 	code = deepcopy(code)
 	insert_tail(code, "return")
 	if version >= 6:
 		mangle_return(code)
-	data, refs = write_block(code, insns)
-	assert not refs
-	return data
+	return bytes(write_block(code, insns, None))
 
-def write_block(code: list[Insn], insns: RevInsnTable) -> tuple[bytes, list[int]]:
-	data, refs = bytearray(), []
+def write_block(code: list[Insn], insns: RevInsnTable, brk: Label | None) -> Writer:
+	out = Writer()
 	for stmt in code:
-		pos = len(data)
-		dat, ref = write_stmt(stmt, insns)
-		data += dat
-		refs += [pos + ref for ref in ref]
-	return data, refs
+		out += write_stmt(stmt, insns, brk)
+	return out
 
-def write_stmt(stmt: Insn, insns: RevInsnTable) -> tuple[bytes, list[int]]:
+def write_stmt(stmt: Insn, insns: RevInsnTable, brk: Label | None) -> Writer:
 	match stmt.name:
 		case "Message": stmt.args[-1] = "\\n".join(stmt.args[-1])
 		case "OpenMessage": stmt.args[-1] = "\\n".join(stmt.args[-1])
@@ -65,38 +56,44 @@ def write_stmt(stmt: Insn, insns: RevInsnTable) -> tuple[bytes, list[int]]:
 		case "GetItemMessageExPlus": stmt.args[3] = "\\n".join(stmt.args[3])
 		case "NoiSystemMessage": stmt.args[-1] = "\r\n".join(stmt.args[-1])
 
-	if stmt.name == "break" and not stmt.args:
-		stmt.args.append(0)
-		d = write_insn(stmt, insns)
-		return d, [len(d)]
+	f = Writer()
+	end = Label()
 
-	if stmt.name == "while":
-		stmt.args.append(0)
-		body, refs = write_block(stmt.body, insns)
-		head_len = len(write_insn(stmt, insns))
-		body += write_insn(Insn("goto", [0]), insns)
-		struct.pack_into("i", body, len(body)-4, -(head_len + len(body)))
-		stmt.args[-1] = len(body)
-	elif stmt.body is not None:
-		body, refs = write_block(stmt.body, insns)
-		if stmt.name != "switch":
-			stmt.args.append(len(body))
+	if stmt.name == "break":
+		assert not stmt.args
+		assert brk is not None
+		f += write_insn(stmt, insns)
+		f += write_label(brk)
+
+	elif not stmt.body:
+		f += write_insn(stmt, insns)
+
+	elif stmt.name in { "if", "elif", "else", "case", "default", "ExecuteCmd" }:
+		f += write_insn(stmt, insns)
+		f += write_label(end)
+		f += write_block(stmt.body, insns, brk)
+
+	elif stmt.name == "while":
+		stmt.name = "if"
+		start = f.place(Label())
+		f += write_insn(stmt, insns)
+		f += write_label(end)
+		f += write_block(stmt.body, insns, end)
+		f += write_insn(Insn("goto", []), insns)
+		f += write_label(start)
+
+	elif stmt.name == "switch":
+		f += write_insn(stmt, insns)
+		f += write_block(stmt.body, insns, end)
+
 	else:
-		body, refs = b"", []
+		raise ValueError(stmt)
 
-	if stmt.name in { "while", "switch" }:
-		body = update_break(body, refs)
+	f.place(end)
+	return f
 
-	head = write_insn(stmt, insns)
-	return head + body, [len(head) + ref for ref in refs]
-
-def write_insn(insn: Insn, insns: RevInsnTable) -> bytes:
-	if insn.name.startswith("op_"):
-		op = int(insn.name[3:], 16)
-	elif insn.name == "while":
-		op = insns["if"]
-	else:
-		op = insns[insn.name]
+def write_insn(insn: Insn, insns: RevInsnTable) -> Writer:
+	op = int(insn.name[3:], 16) if insn.name.startswith("op_") else insns[insn.name]
 	f = Writer()
 	f.u16(op)
 	for arg in insn.args:
@@ -132,12 +129,20 @@ def write_insn(insn: Insn, insns: RevInsnTable) -> bytes:
 				f.u16(0x2020)
 				f.u32(len(v))
 				f.u32(len(bs))
-				f.write(g.data)
+				f.write(bytes(g))
 				f.write(bs)
 
 			case _: raise ValueError(arg)
 
-	return f.data
+	return f
+
+def write_label(label: Label) -> Writer:
+	f = Writer()
+	pos = Label()
+	f.u16(0x82DD)
+	f.diff(4, pos, label)
+	f.place(pos)
+	return f
 
 expr = { v: k for k, v in parse_bin.expr.items() }
 
@@ -184,13 +189,6 @@ def write_expr(e: Expr) -> bytes:
 	w(e)
 	f.u16(0x1D)
 	return f.data
-
-def update_break(data: bytes, refs: list[int]) -> bytes:
-	data = bytearray(data)
-	for ref in refs:
-		struct.pack_into("I", data, ref-4, len(data)-ref)
-	refs.clear()
-	return data
 
 def mangle_return(code: list[Insn]):
 	if len(code) >= 2 and code[-2].body is not None and code[-2].body[-1] == Insn("endif"):
