@@ -14,6 +14,7 @@ Do not confuse these with `script/*.scp`, however, which are source code for the
 ## Supported games
 
 - *The Legend of Nayuta: Boundless Trails*: full support for scripts (`script/*.bin`)
-- *Ys 7*: full support for scripts (`script/*.bin`). However, no reliable method exists for distinguishing these from Nayuta, so you need to pass `-i ys7` to use this.
-- *Ys 8: Lacrimosa of Dana*: full support for scripts (`script/*.bin`), and also the translation files (`script/$lang/*.scp`), see above.
+- *Ys SEVEN*: full support for scripts (`script/*.bin`). However, no reliable method exists for distinguishing these from Nayuta, so you need to pass `-i ys7` to use this.
+- *Ys VIII: Lacrimosa of Dana*: full support for scripts (`script/*.bin`), and also the translation files (`script/$lang/*.scp`), see above.
   **Do note** however that the game does not actually use the `script/*.bin` files; it reads the textual `script/*.scp` files directly, which can be edited with a plain text editor.
+- *Ys IX: Monstrum Nox*: full support for scripts.

@@ -130,13 +130,13 @@ ResetMotion
 if
 elif
 else
-switch
+switch9
 while
 goto
 break
 endif
-case
-default
+case9
+default9
 FreeMove
 ResetFollowPoint
 ResetPartyPos

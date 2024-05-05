@@ -1,5 +1,6 @@
 from __future__ import annotations
 import read
+import typing as T
 
 from common import insn_tables, InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
 
@@ -48,9 +49,7 @@ def parse_block(f: read.Reader, length: int, insns: InsnTable) -> list[Insn]:
 	return out
 
 def parse_stmt(f: read.Reader, insns: InsnTable) -> Insn:
-	pos = f.pos
 	stmt = parse_insn(f, insns)
-	stmt.pos = f.pos
 
 	if stmt.name in { "break", "goto" }:
 		stmt.args[-1] += stmt.pos
@@ -59,7 +58,7 @@ def parse_stmt(f: read.Reader, insns: InsnTable) -> Insn:
 		stmt.body = parse_block(f, stmt.args.pop(), insns)
 
 	if stmt.name == "if" and stmt.body[-1].name == "goto":
-		assert stmt.body[-1] == Insn("goto", [pos])
+		assert stmt.body[-1] == Insn("goto", [stmt.startpos])
 		stmt.name = "while"
 		stmt.body.pop()
 		fix_break(stmt.body, f.pos)
@@ -67,13 +66,15 @@ def parse_stmt(f: read.Reader, insns: InsnTable) -> Insn:
 	if stmt.name == "switch":
 		stmt.body = []
 		while True:
-			pos = f.pos
 			insn = parse_stmt(f, insns)
 			stmt.body.append(insn)
 			if insn.name in {"return", "endif"}:
 				break
 			assert insn.name in {"case", "default"}, insn
 		fix_break(stmt.body, f.pos)
+
+	if stmt.name == "switch9":
+		stmt = parse_ys9_switch(f, insns, stmt)
 
 	match stmt.name:
 		case "Message": stmt.args[-1] = stmt.args[-1].split("\\n")
@@ -86,6 +87,7 @@ def parse_stmt(f: read.Reader, insns: InsnTable) -> Insn:
 	return stmt
 
 def parse_insn(f: read.Reader, insns: InsnTable) -> Insn:
+	startpos = f.pos
 	op = f.u16()
 	name = insns.get(op, f"op_{op:04X}")
 	args = []
@@ -113,7 +115,40 @@ def parse_insn(f: read.Reader, insns: InsnTable) -> Insn:
 			case op:
 				f.pos -= 2
 				break
-	return Insn(name, args)
+
+	insn = Insn(name, args)
+	insn.startpos = startpos
+	insn.pos = f.pos
+	return insn
+
+def parse_ys9_switch(f: read.Reader, insns: InsnTable, stmt: Insn) -> Insn:
+	stmt.name = "switch"
+	stmt.body = []
+	head = parse_insn(f, insns)
+	assert head.name == "op_0000"
+	assert len(head.args) == stmt.args.pop()
+
+	while True:
+		insn = parse_stmt(f, insns)
+		if insn.name in {"case9", "default9"}:
+			insn.name = insn.name[:-1]
+			stmt.body.append(insn)
+			insn.body = []
+		elif insn.name in {"endif", "return"}:
+			stmt.body.append(insn)
+			break
+		else:
+			stmt.body[-1].body.append(insn)
+
+	offsets = [i.startpos - (head.startpos + 2) for i in stmt.body]
+	offsets.pop()
+	offsets.insert(0, offsets.pop())
+	offsets = [p - i * 6 for i, p in enumerate(offsets)]
+	assert head.args == offsets
+	fix_break(stmt.body, f.pos)
+	if stmt.body[-2] == Insn("default", [], [Insn("break", [])]):
+		stmt.body.pop(-2)
+	return stmt
 
 expr = {
 	# - 1

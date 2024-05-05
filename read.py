@@ -165,8 +165,11 @@ class Writer:
 	def __getitem__(self, label: Label) -> int:
 		return self.labels[label]
 
+	def __setitem__(self, label: Label, pos: int) -> None:
+		self.labels[label] = pos
+
 	def place(self, label: Label) -> Label:
-		self.labels[label] = len(self)
+		self[label] = len(self)
 		return label
 
 	def pack(self, spec: str, *args: T.Any) -> None:
@@ -176,8 +179,8 @@ class Writer:
 		self.thunks[len(self.data)] = (n, thunk)
 		self.write(bytes(n))
 
-	def diff(self, width: int, a: Label, b: Label) -> None:
-		self.delay(width, lambda r: int.to_bytes(r[b] - r[a], width, "little", signed = True))
+	def diff(self, width: int, a: Label, b: Label, offset: int = 0) -> None:
+		self.delay(width, lambda r: int.to_bytes(r[b] - r[a] + offset, width, "little", signed = True))
 
 	def u8 (self, v: int) -> None: self.pack("B", v)
 	def u16(self, v: int) -> None: self.pack("H", v)

@@ -83,8 +83,32 @@ def write_stmt(stmt: Insn, insns: RevInsnTable, brk: Label | None) -> Writer:
 		f += write_label(start)
 
 	elif stmt.name == "switch":
-		f += write_insn(stmt, insns)
-		f += write_block(stmt.body, insns, end)
+		if "switch9" in insns:
+			stmt.name = "switch9"
+			has_default = any(case.name == "default" for case in stmt.body)
+			if not has_default:
+				stmt.body.insert(-1, Insn("default", [], [Insn("break", [])]))
+			stmt.args.append(len(stmt.body) - 1)
+			g = Writer()
+			labels = []
+			for case in stmt.body:
+				if case.name in { "case", "default" }:
+					case.name += "9"
+					labels.append(g.place(Label()))
+					g += write_insn(case, insns)
+					g += write_block(case.body, insns, end)
+				else:
+					g += write_insn(case, insns)
+
+			f += write_insn(stmt, insns)
+			f.u16(0)
+			f += write_label(labels[-1], 6)
+			for l in labels[:-1]:
+				f += write_label(l, 6)
+			f += g
+		else:
+			f += write_insn(stmt, insns)
+			f += write_block(stmt.body, insns, end)
 
 	else:
 		raise ValueError(stmt)
@@ -136,11 +160,11 @@ def write_insn(insn: Insn, insns: RevInsnTable) -> Writer:
 
 	return f
 
-def write_label(label: Label) -> Writer:
+def write_label(label: Label, offset: int = 0) -> Writer:
 	f = Writer()
 	pos = Label()
 	f.u16(0x82DD)
-	f.diff(4, pos, label)
+	f.diff(4, pos, label, offset)
 	f.place(pos)
 	return f
 
