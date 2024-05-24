@@ -1,6 +1,7 @@
 from __future__ import annotations
 import read
 import typing as T
+import settings
 
 from common import insn_tables, InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
 
@@ -17,7 +18,7 @@ def parse_ys7_scp(data: bytes, insns: InsnTable | None = None) -> Ys7Scp:
 
 	functbl = []
 	for _ in range(nfuncs):
-		name = f[32].rstrip(b"\0").decode("cp932")
+		name = f[32].rstrip(b"\0").decode(settings.ENCODING)
 		length = f.u32()
 		start = f.u32()
 		functbl.append((name, start, length))
@@ -98,7 +99,7 @@ def parse_insn(f: read.Reader, insns: InsnTable) -> Insn:
 			case 0x82DE:
 				args.append(f.f32())
 			case 0x82DF:
-				args.append(f[f.u32()].decode("cp932"))
+				args.append(f[f.u32()].decode(settings.ENCODING))
 			case 0x82E0:
 				args.append(AExpr(parse_expr(f.sub(f.u32()))))
 			case 0x2020:
@@ -107,7 +108,7 @@ def parse_insn(f: read.Reader, insns: InsnTable) -> Insn:
 				text = f[nbytes]
 				val = []
 				for a, b in zip(starts, starts[1:] + [nbytes]):
-					s = text[a:b].decode("cp932")
+					s = text[a:b].decode(settings.ENCODING)
 					assert s.endswith("\x01")
 					val.append(s[:-1])
 				args.append(val)
@@ -237,7 +238,7 @@ def parse_expr(f: read.Reader) -> Expr:
 			case "float":
 				ops.append(f.f32())
 			case "chr":
-				ops.append(f[f.u32()].decode("cp932"))
+				ops.append(f[f.u32()].decode(settings.ENCODING))
 			case "unop", op:
 				a = pop()
 				ops.append(Unop(op, a))

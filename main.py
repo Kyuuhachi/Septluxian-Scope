@@ -13,9 +13,10 @@ argp = argparse.ArgumentParser()
 argp.add_argument("-q", "--quiet", help="don't write status messages", action = "store_true")
 argp.add_argument("-i", "--insn", help="path to instruction table")
 argp.add_argument("-o", "--output", help="file or directory to place files in", type = Path)
+argp.add_argument("-e", "--encoding", help="text encoding to use in binary files")
 argp.add_argument("files", metavar="file", nargs="+", help="files to convert", type = Path)
 
-def __main__(quiet: bool, insn: str | None, output: Path | None, files: list[Path]) -> int:
+def __main__(quiet: bool, insn: str | None, output: Path | None, files: list[Path], encoding: str | None) -> int:
 	if output is None:
 		make_output = lambda path, suffix: path.with_suffix(suffix)
 	elif len(files) == 1 and not output.is_dir():
@@ -23,6 +24,10 @@ def __main__(quiet: bool, insn: str | None, output: Path | None, files: list[Pat
 	else:
 		output.mkdir(parents=True, exist_ok=True)
 		make_output = lambda path, suffix: output / path.with_suffix(suffix).name
+
+	if encoding is not None:
+		import settings
+		settings.ENCODING = encoding
 
 	if insn is None:
 		insns = None

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from copy import deepcopy
 import typing as T
+import settings
 
 from common import insn_tables, InsnTable, Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp, Arg
 from read import Writer, Label
@@ -24,7 +25,7 @@ def write_ys7_scp(scp: Ys7Scp, insns: InsnTable | None = None) -> bytes:
 
 	data = Writer()
 	for name, code in scp.functions:
-		name = name.encode("cp932").ljust(32, b"\0")
+		name = name.encode(settings.ENCODING).ljust(32, b"\0")
 		assert len(name) == 32
 		funcdata = write_func(code, _insns, scp.version)
 		f.write(name)
@@ -131,7 +132,7 @@ def write_insn(insn: Insn, insns: RevInsnTable) -> Writer:
 				f.f32(v)
 
 			case str(v):
-				v = v.encode("cp932")
+				v = v.encode(settings.ENCODING)
 				f.u16(0x82DF)
 				f.u32(len(v))
 				f.write(v)
@@ -146,7 +147,7 @@ def write_insn(insn: Insn, insns: RevInsnTable) -> Writer:
 				g = Writer()
 				bs = bytearray()
 				for line in v:
-					line = (line + "\x01").encode("cp932")
+					line = (line + "\x01").encode(settings.ENCODING)
 					g.u32(len(bs))
 					bs.extend(line)
 
@@ -183,7 +184,7 @@ def write_expr(e: Expr) -> bytes:
 				f.f32(v)
 
 			case str(v):
-				v = v.encode("cp932")
+				v = v.encode(settings.ENCODING)
 				f.u16(0x2C)
 				f.u32(len(v))
 				f.write(v)
