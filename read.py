@@ -69,9 +69,7 @@ class Reader:
 	def i32(self) -> int: return self.unpack("i")[0]
 	def i64(self) -> int: return self.unpack("q")[0]
 
-	def f32(self) -> float:
-		f = self.unpack("f")[0]
-		return float(f"{f:f}")
+	def f32(self) -> float: return self.unpack("f")[0]
 	def f64(self) -> float: return self.unpack("d")[0]
 
 	def check(self, data: bytes): _check(self, lambda: self[len(data)], data)

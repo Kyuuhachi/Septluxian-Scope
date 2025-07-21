@@ -1,5 +1,6 @@
 from __future__ import annotations
 from textwrap import indent
+import struct
 
 from common import Insn, Expr, Binop, Unop, Call, Index, AExpr, Ys7Scp
 
@@ -34,11 +35,18 @@ def print_str(s: str) -> str:
 	assert '\t' not in s
 	return '"' + s.replace('"', '""') + '"'
 
+def print_float(f: float) -> str:
+	for i in range(50):
+		s = f"{f:.{i}f}"
+		if struct.pack("f", f) == struct.pack("f", float(s)):
+			return s
+	raise ValueError(f"no repr for {f}")
+
 def print_expr(e: Expr, prio: int = 1000) -> str:
 	prio2 = 100
 	match e:
 		case int(e): r = str(e)
-		case float(e): r = f"{e:f}"
+		case float(e): r = print_float(e)
 		case str(e): r = print_str(e)
 		case Binop(a, op, b):
 			prio2 = binops[op]
@@ -57,7 +65,7 @@ def print_code(code: list[Insn]) -> str:
 		for a in insn.args:
 			match a:
 				case int(e): r = str(e)
-				case float(e): r = f"{e:f}"
+				case float(e): r = print_float(e)
 				case str(e): r = print_str(e)
 				case list(v):
 					a = "".join([print_str(line) + "\n" for line in v])
