@@ -192,3 +192,5 @@ class Writer:
 
 	def f32(self, v: float) -> None: self.pack("f", v)
 	def f64(self, v: float) -> None: self.pack("d", v)
+
+	def pad(self, n: int) -> None: self.write(bytes(-len(self) % n))
